@@ -34,3 +34,6 @@
 /app/assets/builds/*
 !/app/assets/builds/.keep
 /.env
+
+# Ignore Claude Code guidelines
+/.claude/CLAUDE.md
