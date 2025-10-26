@@ -1,50 +1,147 @@
-# README
+# kokushiEX
+
 ## サービス概要
-サービス名：国試exforPT
-## 概要
-国試exforPTはオンライン上で理学療法士国家試験の過去問を受験できるサービスです。
-- ユーザーはユーザー登録なしで受験できます
-- 過去問は年度別、午前問題、午後問題等絞り込んで受験することもできます
-- ユーザー登録したユーザーは受験結果の詳細なレポートを確認できます
-- 受験結果を共有することができます
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+**国試exforPT** - 理学療法士国家試験のオンライン過去問練習サービス
 
-Things you may want to cover:
+### 主な機能
 
-* Ruby version
-- Ruby 3.3.1
+- **ゲスト受験**: ユーザー登録なしで過去問を受験可能
+- **カスタム試験**: 年度別、午前/午後問題、タグ別で絞り込んだ試験を作成可能
+- **詳細レポート**: ユーザー登録すると受験結果の詳細なレポートを確認可能
+- **受験履歴**: 過去の受験結果を一覧表示し、成績推移を確認可能
 
-* System dependencies
-- Rails 7.0.8以上
-- MySQLを使用
+## 技術スタック
 
-* Configuration
-- 依存するGemやライブラリはGemfileに記載されています。
-- `bundle install` 
+- **Ruby**: 3.3.8
+- **Rails**: 7.2.2.2
+- **Database**: MySQL 8.4.3（開発環境）、PostgreSQL（本番環境）
+- **Authentication**: Devise
+- **Authorization**: Pundit
+- **Rate Limiting**: Rack::Attack
+- **Background Jobs**: Sidekiq + Redis
+- **Frontend**: Hotwire（Turbo + Stimulus）、Tailwind CSS
+- **Testing**: RSpec、FactoryBot、Capybara
 
-* Database creation
-- データベースはMySQLを使用しています。
-- `rails db:create` 
+## セキュリティ機能
 
-* Database initialization
-- `rails db:migrate`
+このアプリケーションには、以下のセキュリティ対策が実装されています：
 
-* How to run the test suite
-### テストスイートの実行方法
-- `gem RSpec`を使用
-- `bundle exec rspec` コマンドでテストを実行
+- **Content Security Policy (CSP)**: XSS攻撃対策
+- **Pundit**: リソースベースの認可制御
+- **Rack::Attack**: レート制限によるDoS/ブルートフォース攻撃対策
+- **Strong Parameters**: Mass Assignment攻撃対策
+- **管理者認証**: Sidekiq管理画面への管理者のみアクセス制限
+- **Rails 7.2.2.2**: 最新のセキュリティパッチ適用済み
 
-* Services (job queues, cache servers, search engines, etc.)
-- `rails`: アプリケーションのフレームワーク。
-- `mysql2`: データベースとしてMySQLを使用。
-- `puma`: HTTPサーバーとしてPumaを使用。
-- `sprockets-rails`: アセットパイプラインを提供。
-- `importmap-rails`, `turbo-rails`, `stimulus-rails`: JavaScriptのモダンな管理とページの高速化。
-- `tailwindcss-rails`: スタイリングのためのTailwind CSS。
-- `jbuilder`: JSON形式のAPIを構築。
-- `bootsnap`: アプリケーションの起動時間の短縮。
-- `rspec-rails`, `capybara`, `selenium-webdriver`: テスト用のGem。
+詳細は [CLAUDE.md](CLAUDE.md) を参照してください。
 
-* Deployment instructions
+## セットアップ
+
+### 前提条件
+
+- Docker
+- Docker Compose
+
+### 初期セットアップ
+
+```bash
+# コンテナ起動
+docker-compose up -d
+
+# データベース作成
+docker-compose exec web rails db:create
+
+# マイグレーション実行
+docker-compose exec web rails db:migrate
+
+# シードデータ読み込み
+docker-compose exec web rails db:seed_fu
+```
+
+### 開発サーバー起動
+
+```bash
+# Rails + Tailwind CSSウォッチャーを起動
+docker-compose up
+
+# または bin/dev を使用（コンテナ内で）
+docker-compose exec web bin/dev
+```
+
+アプリケーションは http://localhost:3000 で起動します。
+
+### 管理者ユーザー（開発環境）
+
+シードデータで作成される管理者アカウント：
+
+```
+Email: admin@example.com
+Password: admin123
+```
+
+## テスト
+
+```bash
+# 全テスト実行
+docker-compose exec web bundle exec rspec
+
+# 特定のテストファイル実行
+docker-compose exec web bundle exec rspec spec/models/user_spec.rb
+
+# カバレッジ付きで実行
+docker-compose exec web COVERAGE=true bundle exec rspec
+```
+
+## コード品質チェック
+
+```bash
+# RuboCop実行
+docker-compose exec web bundle exec rubocop
+
+# RuboCop自動修正
+docker-compose exec web bundle exec rubocop -a
+
+# ERBファイルのLint
+docker-compose exec web bundle exec erblint --lint-all
+```
+
+## データベース
+
+### マイグレーション
+
+```bash
+docker-compose exec web rails db:migrate
+```
+
+### シードデータ
+
+```bash
+# 全シードデータ読み込み
+docker-compose exec web rails db:seed_fu
+
+# 特定のフィクスチャ読み込み
+docker-compose exec web rails db:seed_fu FIXTURE_PATH=db/fixtures/development
+```
+
+## 本番環境デプロイ
+
+### 管理者ユーザー作成
+
+```bash
+ADMIN_EMAIL=your-admin@example.com ADMIN_PASSWORD=secure_password rails admin:create
+```
+
+### 環境変数
+
+本番環境では以下の環境変数を設定してください：
+
+- `RAILS_ENV`: `production`
+- `SECRET_KEY_BASE`: Rails secret key
+- `DATABASE_URL`: PostgreSQL接続URL
+- `REDIS_URL`: Redis接続URL
+- その他のDevise/メール設定
+
+## ライセンス
+
+このプロジェクトは私的利用を目的としています。
