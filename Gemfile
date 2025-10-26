@@ -54,6 +54,9 @@ gem 'bootsnap', require: false
 gem 'devise'
 gem 'devise-i18n'
 
+# 認可
+gem 'pundit'
+
 # seed
 gem 'seed-fu'
 
