@@ -264,6 +264,82 @@ docker-compose exec db mysql -u root -p
 - `mysql_data`: MySQLデータ
 - `redis_data`: Redisデータ
 
+## セキュリティ機能
+
+このアプリケーションには、以下のセキュリティ対策が実装されています。
+
+### 1. Content Security Policy (CSP)
+
+XSS攻撃への防御を強化するため、CSPを有効化しています。
+
+- **設定場所**: `config/initializers/content_security_policy.rb`
+- **主な設定**:
+  - Import Maps/Turbo/Stimulus対応
+  - Tailwind CSSのインラインスタイル対応
+  - nonce生成（セッションIDを使用）
+  - クリックジャッキング対策（frame-ancestors）
+  - ベースタグインジェクション対策（base-uri）
+- **環境別動作**:
+  - 開発環境: report-onlyモード（警告のみ）
+  - 本番環境: 強制モード
+
+### 2. 認証・認可
+
+#### 認証 (Authentication)
+- **Devise**: ユーザー認証システム
+  - confirmableモジュールでメール確認機能を実装
+  - `before_action :authenticate_user!`で未認証アクセスを防止
+- **保護されているコントローラー**:
+  - `DashboardController` - ダッシュボード画面
+  - `UserResponsesController` - 試験回答の保存
+  - `ExaminationsController` - 試験結果の閲覧
+  - `ScoresController` - スコアの閲覧
+  - `AccountsController` - アカウント情報
+
+#### 認可 (Authorization)
+- **Pundit**: リソースベースの認可制御
+  - `ExaminationPolicy`: ユーザーは自分の試験結果のみアクセス可能
+  - `ScorePolicy`: ユーザーは自分のスコアのみアクセス可能
+  - 他人のデータへのアクセス試行は適切にリダイレクト
+
+### 3. Rack::Attackによるレート制限
+
+DoS攻撃やブルートフォース攻撃を防ぐため、レート制限を実装しています。
+
+- **設定場所**: `config/initializers/rack_attack.rb`
+- **レート制限内容**:
+  - ユーザー登録: 1時間に3回まで（IP単位）
+  - ログイン試行: 5分間に5回まで（IP単位）
+  - ゲストユーザー作成: 1時間に10回まで（IP単位）
+  - 試験提出: 5分間に1回まで（ユーザー単位）
+- **キャッシュストア**: Redis DB 1（Rack::Attack専用）
+
+### 4. Strong Parameters
+
+Mass Assignment攻撃を防ぐため、全コントローラーでStrong Parametersを実装しています。
+
+- **実装コントローラー**:
+  - `UserResponsesController`: `test_id`、`choice_ids`をホワイトリスト化
+  - `MiniTestsController`: `choice_ids`、`question_ids`をホワイトリスト化
+- **フォームオブジェクト**:
+  - `MiniTestSearchForm`: パラメータのサニタイズと範囲チェック（1〜200）
+
+### 5. Sidekiq管理画面の保護
+
+バックグラウンドジョブの管理画面を管理者のみがアクセスできるように制限しています。
+
+- **アクセス制御**: `SidekiqAdminMiddleware`
+- **アクセス要件**: ログイン済み + 管理者権限（`admin: true`）
+- **制御内容**:
+  - 未ログイン → `/users/sign_in`にリダイレクト
+  - 通常ユーザー → トップページにリダイレクト
+  - 管理者 → アクセス許可
+
+### 6. Rails セキュリティアップデート
+
+- **Rails 7.2.2.2**: セキュリティパッチ（CVE-2025-24293、CVE-2025-55193）を適用
+- **Ruby 3.3.8**: 最新の安定版を使用
+
 ## コードスタイルとパターン
 
 - RuboCopルール（`.rubocop.yml`）に従う
