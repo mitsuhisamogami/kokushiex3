@@ -3,6 +3,7 @@
 # Table name: users
 #
 #  id                     :bigint           not null, primary key
+#  admin                  :boolean          default(FALSE), not null
 #  confirmation_sent_at   :datetime
 #  confirmation_token     :string(255)
 #  confirmed_at           :datetime
@@ -32,6 +33,11 @@ class User < ApplicationRecord
   validates :username, presence: true
   validates :email, presence: true, uniqueness: true
   validates :password, presence: true, length: { minimum: 6 }
+  validate :admin_restrictions
+
+  def admin?
+    admin
+  end
 
   def self.create_guest
     unique_email = "guest_#{SecureRandom.hex(5)}@example.com"
@@ -45,5 +51,11 @@ class User < ApplicationRecord
   def guest?
     # ゲストユーザーのメールアドレスの型をチェック
     email.start_with?('guest_') && email.end_with?('@example.com')
+  end
+
+  private
+
+  def admin_restrictions
+    errors.add(:admin, 'ゲストユーザーは管理者になれません') if guest? && admin?
   end
 end

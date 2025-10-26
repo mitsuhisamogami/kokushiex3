@@ -3,6 +3,7 @@
 # Table name: users
 #
 #  id                     :bigint           not null, primary key
+#  admin                  :boolean          default(FALSE), not null
 #  confirmation_sent_at   :datetime
 #  confirmation_token     :string(255)
 #  confirmed_at           :datetime
@@ -28,5 +29,17 @@ FactoryBot.define do
     email { Faker::Internet.unique.email }
     password { '12345678' }
     password_confirmation { '12345678' }
+    admin { false }
+
+    trait :admin do
+      admin { true }
+      username { '管理者' }
+      sequence(:email) { |n| "admin#{n}@example.com" }
+    end
+
+    trait :guest do
+      email { "guest_#{SecureRandom.hex(5)}@example.com" }
+      username { 'ゲストユーザー' }
+    end
   end
 end
