@@ -3,6 +3,7 @@
 # Table name: users
 #
 #  id                     :bigint           not null, primary key
+#  admin                  :boolean          default(FALSE), not null
 #  confirmation_sent_at   :datetime
 #  confirmation_token     :string(255)
 #  confirmed_at           :datetime
@@ -102,6 +103,35 @@ RSpec.describe User do
         let(:email) { 'guest_user@gmail.com' }
 
         it { is_expected.to be false }
+      end
+    end
+  end
+
+  describe '管理者機能' do
+    describe '#admin?' do
+      context '管理者ユーザー' do
+        it '管理者を作成できる' do
+          user = create(:user, :admin)
+          expect(user.admin?).to be true
+        end
+      end
+
+      context '通常ユーザー' do
+        it 'デフォルトでadminがfalse' do
+          user = create(:user)
+          expect(user.admin?).to be false
+        end
+      end
+    end
+
+    describe 'admin_restrictions' do
+      context 'ゲストユーザー' do
+        it 'ゲストユーザーは管理者になれない' do
+          guest = described_class.create_guest
+          guest.admin = true
+          expect(guest).not_to be_valid
+          expect(guest.errors[:admin]).to include('ゲストユーザーは管理者になれません')
+        end
       end
     end
   end
