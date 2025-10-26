@@ -172,6 +172,36 @@ users: { username, email, encrypted_password, confirmation_token, ... } # Devise
 
 ## 重要な実装詳細
 
+### 管理者ユーザーシステム
+
+#### 開発環境
+
+シードデータに管理者ユーザーが含まれています：
+
+```bash
+# シード実行
+docker-compose exec web rails db:seed_fu
+
+# ログイン情報
+Email: admin@example.com
+Password: admin123
+```
+
+#### 本番環境
+
+Rakeタスクで管理者ユーザーを作成：
+
+```bash
+# 環境変数を設定して実行
+ADMIN_EMAIL=your-admin@example.com ADMIN_PASSWORD=secure_password rails admin:create
+```
+
+#### Sidekiq管理画面
+
+- URL: `/sidekiq`
+- アクセス要件: ログイン済み + 管理者権限（`admin: true`）
+- 通常ユーザーやゲストユーザーはアクセス不可
+
 ### ゲストユーザーシステム
 
 ゲストユーザーは`User.create_guest`で作成されます：
@@ -179,6 +209,7 @@ users: { username, email, encrypted_password, confirmation_token, ... } # Devise
 - Username: 'ゲストユーザー'
 - ランダムな安全なパスワード
 - `user.guest?`メソッドでメールパターンをチェックして識別
+- ゲストユーザーは管理者になれない制約あり
 
 ### 採点システム
 
