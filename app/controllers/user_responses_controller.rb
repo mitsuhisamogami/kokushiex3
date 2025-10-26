@@ -1,4 +1,6 @@
 class UserResponsesController < ApplicationController
+  before_action :authenticate_user!
+
   def create # rubocop:disable Metrics/MethodLength
     ActiveRecord::Base.transaction do
       Examination.create_result!(user_id: current_user.id,
