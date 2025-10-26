@@ -40,5 +40,8 @@ module App
     # Don't generate system test files.
     config.generators.system_tests = nil
     config.active_job.queue_adapter = :sidekiq
+
+    # Rack::Attackを有効化
+    config.middleware.use Rack::Attack
   end
 end
