@@ -24,24 +24,67 @@ class UserResponse < ApplicationRecord
 
   scope :correct_responses, -> { joins(choice: :question).where(choices: { is_correct: true }) }
 
+  MAX_RESPONSES = 250
+
   # insert_allではバリデーションチェックができないためメソッド化
   def self.bulk_create_responses(examination, choice_ids) # rubocop:disable Metrics/MethodLength
-    # 事前に全ての Choiceを一括で取得
-    choices = Choice.where(id: choice_ids)
-    # 不正なchoice_idが含まれている場合はエラーを返す
-    if choices.size != choice_ids.size
-      missing_ids = choice_ids - choices.pluck(:id)
+    sanitized_ids = sanitize_choice_ids(choice_ids)
+    return false if sanitized_ids.blank?
+
+    if sanitized_ids.size > MAX_RESPONSES
+      Rails.logger.error "Too many Choice IDs: #{sanitized_ids.size}"
+      return false
+    end
+
+    choices = Choice.where(id: sanitized_ids)
+    if choices.size != sanitized_ids.size
+      missing_ids = sanitized_ids - choices.pluck(:id)
       Rails.logger.error "Missing Choice IDs: #{missing_ids.join(', ')}"
       return false
     end
-    # 一括挿入用のハッシュを作成
-    attributes = choice_ids.map do |choice_id|
+
+    timestamp = Time.current
+    attributes = sanitized_ids.map do |choice_id|
       {
         examination_id: examination.id,
-        choice_id:
+        choice_id:,
+        created_at: timestamp,
+        updated_at: timestamp
       }
     end
-    # insert_allを使って一括挿入
+
     UserResponse.insert_all(attributes) # rubocop:disable Rails/SkipsModelValidations
+    true
+  rescue ArgumentError => e
+    Rails.logger.error(e.message)
+    false
   end
+
+  def self.sanitize_choice_ids(choice_ids)
+    numeric_ids = normalize_choice_ids(choice_ids)
+    raise ArgumentError, 'choice_ids cannot be blank' if numeric_ids.blank?
+
+    ensure_no_duplicates!(numeric_ids)
+    numeric_ids.uniq
+  end
+
+  def self.normalize_choice_ids(choice_ids)
+    raise ArgumentError, 'choice_ids must be an array' unless choice_ids.is_a?(Array)
+
+    choice_ids.each_with_object([]) do |id, collection|
+      if id.is_a?(Integer)
+        collection << id
+      elsif id.respond_to?(:to_s) && id.to_s =~ /\A\d+\z/
+        collection << id.to_s.to_i
+      end
+    end
+  end
+
+  def self.ensure_no_duplicates!(choice_ids)
+    duplicates = choice_ids.each_with_object(Hash.new(0)) { |value, counts| counts[value] += 1 }
+                           .select { |_value, count| count > 1 }
+                           .keys
+    raise ArgumentError, "Duplicate Choice IDs detected: #{duplicates.join(', ')}" if duplicates.present?
+  end
+  private_class_method :sanitize_choice_ids, :normalize_choice_ids, :ensure_no_duplicates!
 end

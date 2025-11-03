@@ -65,12 +65,12 @@ RSpec.describe 'MiniTests' do
         invalid_params = {
           search: {
             tag_ids: [tag.id],
-            question_count: 300
+            question_count: 60
           }
         }
         get('/mini_tests', params: invalid_params)
         expect(response).to redirect_to(tests_select_path)
-        expect(flash[:alert]).to include('問題数は1〜200の整数で指定してください')
+        expect(flash[:alert]).to include('問題数は1〜50の整数で指定してください')
       end
     end
   end
@@ -96,6 +96,74 @@ RSpec.describe 'MiniTests' do
     end
 
     context '不正なパラメータが送信された場合' do
+      it 'question_idsが空の場合はリダイレクトする' do
+        params = {
+          user_response: {
+            choice_ids: choice_ids.map(&:to_s)
+          },
+          question_ids: []
+        }
+
+        post('/mini_tests', params:, headers: { 'Accept' => 'text/vnd.turbo-stream.html' })
+        expect(response).to redirect_to(tests_select_path)
+        expect(flash[:alert]).to eq('問題が選択されていません')
+      end
+
+      it 'question_idsが上限を超える場合はリダイレクトする' do
+        extra_questions = create_list(:question, 48, test_session:)
+        all_questions = questions + extra_questions
+        params = {
+          user_response: {
+            choice_ids: all_questions.map { |question| create(:choice, question:).id.to_s }
+          },
+          question_ids: all_questions.map(&:id)
+        }
+
+        post('/mini_tests', params:, headers: { 'Accept' => 'text/vnd.turbo-stream.html' })
+        expect(response).to redirect_to(tests_select_path)
+        expect(flash[:alert]).to eq('問題数が多すぎます（最大50問）')
+      end
+
+      it 'choice_idsが重複している場合はリダイレクトする' do
+        duplicate_choice_id = choice_ids.first
+        params = {
+          user_response: {
+            choice_ids: [duplicate_choice_id.to_s, duplicate_choice_id.to_s]
+          },
+          question_ids: [questions.first.id]
+        }
+
+        post('/mini_tests', params:, headers: { 'Accept' => 'text/vnd.turbo-stream.html' })
+        expect(response).to redirect_to(tests_select_path)
+        expect(flash[:alert]).to eq('重複した回答IDが含まれています')
+      end
+
+      it '存在しないchoice_idが含まれている場合はリダイレクトする' do
+        params = {
+          user_response: {
+            choice_ids: choice_ids.map(&:to_s) + ['999999']
+          },
+          question_ids: questions.map(&:id)
+        }
+
+        post('/mini_tests', params:, headers: { 'Accept' => 'text/vnd.turbo-stream.html' })
+        expect(response).to redirect_to(tests_select_path)
+        expect(flash[:alert]).to eq('存在しない回答が含まれています')
+      end
+
+      it '存在しないquestion_idが含まれている場合はリダイレクトする' do
+        params = {
+          user_response: {
+            choice_ids: choice_ids.map(&:to_s)
+          },
+          question_ids: questions.map(&:id) + [999_999]
+        }
+
+        post('/mini_tests', params:, headers: { 'Accept' => 'text/vnd.turbo-stream.html' })
+        expect(response).to redirect_to(tests_select_path)
+        expect(flash[:alert]).to eq('存在しない問題が含まれています')
+      end
+
       it '不正な文字列が含まれるIDは除外され、有効な整数IDのみで処理される' do
         valid_choice_id = choice_ids.first
         valid_question_id = questions.first.id
