@@ -9,6 +9,7 @@
 #  confirmed_at           :datetime
 #  email                  :string(255)      default(""), not null
 #  encrypted_password     :string(255)      default(""), not null
+#  guest_limit_reached_at :datetime
 #  remember_created_at    :datetime
 #  reset_password_sent_at :datetime
 #  reset_password_token   :string(255)
@@ -19,9 +20,10 @@
 #
 # Indexes
 #
-#  index_users_on_confirmation_token    (confirmation_token) UNIQUE
-#  index_users_on_email                 (email) UNIQUE
-#  index_users_on_reset_password_token  (reset_password_token) UNIQUE
+#  index_users_on_confirmation_token      (confirmation_token) UNIQUE
+#  index_users_on_email                   (email) UNIQUE
+#  index_users_on_guest_limit_reached_at  (guest_limit_reached_at)
+#  index_users_on_reset_password_token    (reset_password_token) UNIQUE
 #
 require 'rails_helper'
 
@@ -104,6 +106,55 @@ RSpec.describe User do
 
         it { is_expected.to be false }
       end
+    end
+  end
+
+  describe '.guest_users' do
+    let!(:guest_user) { create(:user, :guest) }
+    let!(:normal_user) { create(:user) }
+
+    it 'ゲストアカウントのみを返す' do
+      expect(described_class.guest_users).to contain_exactly(guest_user)
+      expect(described_class.guest_users).not_to include(normal_user)
+    end
+  end
+
+  describe '.old_guest_users' do
+    let!(:fresh_guest) { create(:user, :guest, created_at: 2.days.ago) }
+    let!(:stale_guest) { create(:user, :guest, created_at: 8.days.ago) }
+
+    it '7日より古いゲストのみを返す' do
+      expect(described_class.old_guest_users).to contain_exactly(stale_guest)
+      expect(described_class.old_guest_users).not_to include(fresh_guest)
+    end
+  end
+
+  describe '.cleanup_old_guests!' do
+    let!(:stale_guest) { create(:user, :guest, created_at: 8.days.ago) }
+
+    it '古いゲストを削除し削除件数を返す' do
+      expect do
+        expect(described_class.cleanup_old_guests!).to eq 1
+      end.to change(described_class, :count).by(-1)
+      expect(described_class.exists?(stale_guest.id)).to be false
+    end
+  end
+
+  describe '#guest_examination_limit_reached?' do
+    subject(:limit_reached?) { guest_user.guest_examination_limit_reached? }
+
+    let(:guest_user) { create(:user, :guest) }
+
+    context '受験回数が上限未満のとき' do
+      before { create_list(:examination, 4, user: guest_user) }
+
+      it { is_expected.to be false }
+    end
+
+    context '受験回数が上限に達したとき' do
+      before { create_list(:examination, 5, user: guest_user) }
+
+      it { is_expected.to be true }
     end
   end
 

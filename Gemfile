@@ -65,6 +65,7 @@ gem 'draper'
 
 # BackGround Job
 gem 'sidekiq'
+gem 'sidekiq-scheduler'
 
 # Configuration
 gem 'dotenv-rails'

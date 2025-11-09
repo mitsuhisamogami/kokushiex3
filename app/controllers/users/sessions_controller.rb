@@ -14,9 +14,11 @@ class Users::SessionsController < Devise::SessionsController
   # end
 
   # DELETE /resource/sign_out
-  # def destroy
-  #   super
-  # end
+  def destroy
+    guest_to_cleanup = guest_user_pending_cleanup
+    super
+    cleanup_guest_user(guest_to_cleanup)
+  end
 
   def guest_sign_in
     user = User.create_guest
@@ -25,11 +27,9 @@ class Users::SessionsController < Devise::SessionsController
   end
 
   def guest_sign_out
-    return unless current_user.guest?
-
-    current_user.destroy
-    sign_out current_user
-    redirect_to root_path, notice: 'ゲストユーザーからログアウトしました。'
+    guest_to_cleanup = current_user if current_user&.guest?
+    destroy
+    cleanup_guest_user(guest_to_cleanup, force: true)
   end
 
   # protected
@@ -45,5 +45,20 @@ class Users::SessionsController < Devise::SessionsController
 
   def after_sign_out_path_for(_resource)
     root_path
+  end
+
+  private
+
+  def guest_user_pending_cleanup
+    return unless current_user&.guest?
+
+    current_user if current_user.guest_limit_reached?
+  end
+
+  def cleanup_guest_user(user, force: false)
+    return unless user&.guest?
+    return unless force || user.guest_limit_reached?
+
+    user.destroy
   end
 end

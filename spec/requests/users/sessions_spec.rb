@@ -142,7 +142,7 @@ RSpec.describe 'Users::sessions' do
     it 'ゲストユーザーからログアウトできる' do
       delete users_guest_sign_out_path
       expect(response).to redirect_to(root_path)
-      expect(response).to have_http_status(:found)
+      expect(response).to have_http_status(:see_other)
     end
   end
 end
