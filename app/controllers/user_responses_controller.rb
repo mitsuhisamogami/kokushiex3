@@ -1,5 +1,6 @@
 class UserResponsesController < ApplicationController
   before_action :authenticate_user!
+  before_action :ensure_guest_can_submit, only: :create
 
   def create # rubocop:disable Metrics/MethodLength
     # rescue内でparams再取得を防ぐため、事前に変数に格納
@@ -35,5 +36,12 @@ class UserResponsesController < ApplicationController
     user_response_params[:choice_ids]
       .select { |id| id.to_s =~ /\A\d+\z/ }
       .map(&:to_i)
+  end
+
+  def ensure_guest_can_submit
+    return unless current_user.guest? && current_user.guest_examination_limit_reached?
+
+    redirect_to dashboard_path,
+                alert: 'ゲストユーザーの受験回数が上限に達しました。受験結果を保持したい場合はアカウントを作成してください。'
   end
 end

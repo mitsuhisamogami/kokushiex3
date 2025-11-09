@@ -28,6 +28,8 @@ class Examination < ApplicationRecord
   has_many :user_responses, dependent: :destroy
   has_one :score, dependent: :destroy
 
+  after_commit :mark_guest_limit_if_reached, on: :create
+
   def self.create_result!(user_id:, test_id:, attempt_date:, choice_ids:)
     examination = Examination.create!(user_id:, test_id:, attempt_date:)
     # 回答の保存
@@ -37,5 +39,14 @@ class Examination < ApplicationRecord
 
     # スコア計算
     Score::ScoreCalculator.new(examination).call
+  end
+
+  private
+
+  # ゲストユーザーの場合は受験回数を確認し、上限に達したらフラグを立てる
+  def mark_guest_limit_if_reached
+    return unless user.guest?
+
+    user.mark_guest_limit_reached! if user.examinations.count >= User::GUEST_EXAM_LIMIT
   end
 end
