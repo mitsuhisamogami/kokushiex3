@@ -20,9 +20,10 @@ class Users::RegistrationsController < Devise::RegistrationsController
   # end
 
   # PUT /resource
-  # def update
-  #   super
-  # end
+  def update
+    @guest_upgrading = current_user&.guest?
+    super
+  end
 
   # DELETE /resource
   # def destroy
@@ -39,6 +40,11 @@ class Users::RegistrationsController < Devise::RegistrationsController
   # end
 
   # protected
+  def update_resource(resource, params)
+    return super unless resource.guest?
+
+    resource.update_without_password(params.merge(guest_limit_reached_at: nil))
+  end
 
   # If you have extra params to permit, append them to the sanitizer.
   # def configure_sign_up_params
@@ -58,5 +64,13 @@ class Users::RegistrationsController < Devise::RegistrationsController
   # The path used after sign up for inactive accounts.
   def after_inactive_sign_up_path_for(_resource)
     edit_user_registration_path
+  end
+
+  def set_flash_message_for_update(resource, prev_unconfirmed_email)
+    if @guest_upgrading
+      flash[:notice] = '本登録が完了しました。これまでの試験結果を引き継いで利用できます。'
+    else
+      super
+    end
   end
 end
