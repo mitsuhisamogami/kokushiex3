@@ -124,6 +124,17 @@ docker-compose exec web rails db:seed_fu
 docker-compose exec web rails db:seed_fu FIXTURE_PATH=db/fixtures/development
 ```
 
+## エラー監視 (Sentry)
+
+本番環境のエラー監視には Sentry を利用します。
+
+1. [Sentry](https://sentry.io) でプロジェクトを作成し、DSN を取得する
+2. `rails credentials:edit` を実行し、`sentry_dsn: <取得した DSN>` を追記する  
+   （または暫定的に `SENTRY_DSN` 環境変数を設定する）
+3. 必要に応じて `SENTRY_TRACES_SAMPLE_RATE` や `SENTRY_ENVIRONMENT` を環境変数で上書きする
+
+DSN が設定されている環境（production / staging）で自動的に Sentry が初期化されます。
+
 ## 本番環境デプロイ
 
 ### 管理者ユーザー作成

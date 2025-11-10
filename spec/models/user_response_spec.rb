@@ -62,8 +62,41 @@ RSpec.describe UserResponse do
         choice_ids_with_invalid = choice_ids + [invalid_choice_id]
         missing_ids = [invalid_choice_id]
 
-        described_class.bulk_create_responses(examination.id, choice_ids_with_invalid)
+        described_class.bulk_create_responses(examination, choice_ids_with_invalid)
         expect(Rails.logger).to have_received(:error).with("Missing Choice IDs: #{missing_ids.join(', ')}").once
+      end
+    end
+
+    context 'choice_idsが重複する場合' do
+      it 'user_responseは作成されない' do
+        duplicated_ids = [choice_ids.first, choice_ids.first]
+
+        expect(described_class.bulk_create_responses(examination, duplicated_ids)).to be false
+        expect(Rails.logger).to have_received(:error).with("Duplicate Choice IDs detected: #{choice_ids.first}").once
+      end
+    end
+
+    context 'choice_idsが配列でない場合' do
+      it 'user_responseは作成されずログに出力される' do
+        expect(described_class.bulk_create_responses(examination, 'invalid')).to be false
+        expect(Rails.logger).to have_received(:error).with('choice_ids must be an array').once
+      end
+    end
+
+    context 'choice_idsが空の場合' do
+      it 'user_responseは作成されない' do
+        expect(described_class.bulk_create_responses(examination, [])).to be false
+        expect(Rails.logger).to have_received(:error).with('choice_ids cannot be blank').once
+      end
+    end
+
+    context 'choice_idsが上限を超える場合' do
+      it 'user_responseは作成されずログに出力される' do
+        excessive_ids = Array.new(UserResponse::MAX_RESPONSES + 1) { create(:choice).id }
+
+        expect(described_class.bulk_create_responses(examination, excessive_ids)).to be false
+        expect(Rails.logger).to have_received(:error)
+          .with("Too many Choice IDs: #{UserResponse::MAX_RESPONSES + 1}").once
       end
     end
   end

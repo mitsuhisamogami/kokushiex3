@@ -65,12 +65,17 @@ gem 'draper'
 
 # BackGround Job
 gem 'sidekiq'
+gem 'sidekiq-scheduler'
 
 # Configuration
 gem 'dotenv-rails'
 
 # Rate Limiting
 gem 'rack-attack'
+
+# Error monitoring
+gem 'sentry-rails'
+gem 'sentry-ruby'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

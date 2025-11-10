@@ -9,6 +9,7 @@
 #  confirmed_at           :datetime
 #  email                  :string(255)      default(""), not null
 #  encrypted_password     :string(255)      default(""), not null
+#  guest_limit_reached_at :datetime
 #  remember_created_at    :datetime
 #  reset_password_sent_at :datetime
 #  reset_password_token   :string(255)
@@ -19,9 +20,10 @@
 #
 # Indexes
 #
-#  index_users_on_confirmation_token    (confirmation_token) UNIQUE
-#  index_users_on_email                 (email) UNIQUE
-#  index_users_on_reset_password_token  (reset_password_token) UNIQUE
+#  index_users_on_confirmation_token      (confirmation_token) UNIQUE
+#  index_users_on_email                   (email) UNIQUE
+#  index_users_on_guest_limit_reached_at  (guest_limit_reached_at)
+#  index_users_on_reset_password_token    (reset_password_token) UNIQUE
 #
 FactoryBot.define do
   factory :user do
