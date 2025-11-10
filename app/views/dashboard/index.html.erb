@@ -1,5 +1,8 @@
 <div class='flex flex-wrap body-font'>
     <div class='w-full max-w-4xl m-auto'>
+        <% if current_user&.guest? %>
+            <%= render 'shared/guest_upgrade_card' %>
+        <% end %>
         <!-- 前回のレポートセクション -->
         <div class='flex mb-10'>
             <div class='w-full h-full border-2 border-gray-200 border-opacity-60 rounded-lg overflow-hidden shadow-xl'>
