@@ -31,3 +31,9 @@
 
 en:
   hello: "Hello world"
+  guest_upgrade_card:
+    badge: 'Guest account'
+    title: 'Switch to a full account to keep your exam history'
+    body_html: 'Register your email and password to keep every result and continue learning seamlessly.'
+    cta: 'Complete registration'
+    dismiss: 'Dismiss message'
