@@ -48,7 +48,8 @@ class MiniTestsController < ApplicationController
   end
 
   def load_mini_test_resources(question_ids, choice_ids)
-    @questions = Question.where(id: question_ids)
+    @questions = Question.includes(:choices, test_session: :test)
+                         .where(id: question_ids)
     validate_question_existence!(question_ids, @questions)
     @selected_answers = Choice.mini_test_answers(choice_ids)
   end

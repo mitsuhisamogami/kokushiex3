@@ -39,6 +39,7 @@ class MiniTestSearchForm
 
     question_ids = scope.pluck(:id)
     Question.random_questions(question_ids, question_count)
+            .includes(:choices, :tags, test_session: :test)
   end
 
   private
