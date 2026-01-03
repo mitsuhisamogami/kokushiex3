@@ -59,6 +59,8 @@ class Users::SessionsController < Devise::SessionsController
     return unless user&.guest?
     return unless force || user.guest_limit_reached?
 
+    # N+1回避のため、関連を先に読み込んでから削除する
+    user.examinations.includes(:user_responses).load
     user.destroy
   end
 end
