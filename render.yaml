@@ -1,0 +1,63 @@
+databases:
+  - name: kokushiex-db
+    plan: starter
+    databaseName: kokushiex
+    user: kokushiex
+    region: singapore
+
+services:
+  - type: redis
+    name: kokushiex-redis
+    plan: starter
+    region: singapore
+
+  - type: web
+    name: kokushiex-web
+    runtime: docker
+    region: singapore
+    plan: starter
+    dockerfilePath: Dockerfile.prod
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kokushiex-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: kokushiex-redis
+          type: redis
+          property: connectionString
+      - key: SECRET_KEY_BASE
+        sync: false
+      - key: RAILS_ENV
+        value: production
+      - key: RACK_ENV
+        value: production
+      - key: RAILS_LOG_TO_STDOUT
+        value: "true"
+      - key: RAILS_SERVE_STATIC_FILES
+        value: "true"
+
+  - type: worker
+    name: kokushiex-worker
+    runtime: docker
+    region: singapore
+    plan: starter
+    dockerfilePath: Dockerfile.prod
+    dockerCommand: bundle exec sidekiq
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kokushiex-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: kokushiex-redis
+          type: redis
+          property: connectionString
+      - key: SECRET_KEY_BASE
+        sync: false
+      - key: RAILS_ENV
+        value: production
+      - key: RACK_ENV
+        value: production
