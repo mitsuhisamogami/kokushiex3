@@ -70,6 +70,6 @@ Rails.application.configure do
     next unless defined?(Bullet)
 
     Bullet.enable = true
-    Bullet.raise = false
+    Bullet.raise = true
   end
 end
