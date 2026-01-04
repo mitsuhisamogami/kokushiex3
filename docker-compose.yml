@@ -18,19 +18,19 @@ services:
     stdin_open: true
 
   db:
-    image: mysql:8.4.3
-    # m1はplatformを指定して、linux/amd64にエミュレートする指定をすることで正常に動く
-    platform: linux/amd64
-    # DBのレコードが日本語だと文字化けするので、utf8をセットする
-    command: mysqld --character-set-server=utf8 --collation-server=utf8_unicode_ci
+    image: postgres:16
+    # m1 は image によっては platform 指定が必要な場合があるため、必要に応じて指定する
+    # platform: linux/amd64
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
     # 環境変数
     environment:
-      MYSQL_ROOT_PASSWORD: password
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: postgres
+      POSTGRES_DB: app_development
       TZ: "Asia/Tokyo"
     ports:
-      - "3306:3306"
+      - "5432:5432"
 
   redis:
     image: "redis:latest"
@@ -56,5 +56,5 @@ services:
 # コンテナを作り直したとしてもPC上に残るようにするために設定
 volumes:
   gem_data:
-  mysql_data:
+  postgres_data:
   redis_data:

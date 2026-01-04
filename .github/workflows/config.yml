@@ -7,13 +7,14 @@ jobs:
     runs-on: ubuntu-latest
     services:
       db:
-        image: mysql:8.4.3
+        image: postgres:16
         ports:
-          - 3306:3306
+          - 5432:5432
         env:
           TZ: "Asia/Tokyo"
-          MYSQL_ROOT_PASSWORD: password
-        options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=2s --health-retries=3
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        options: --health-cmd="pg_isready -U postgres" --health-interval=5s --health-timeout=2s --health-retries=5
     container:
       image: ruby:3.3.8
       env:
