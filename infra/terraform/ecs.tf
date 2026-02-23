@@ -195,10 +195,12 @@ resource "aws_ecs_task_definition" "worker" {
 }
 
 resource "aws_ecs_service" "web" {
-  name            = "${local.name_prefix}-web"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.web.arn
-  desired_count   = 1
+  name                               = "${local.name_prefix}-web"
+  cluster                            = aws_ecs_cluster.main.id
+  task_definition                    = aws_ecs_task_definition.web.arn
+  desired_count                      = 1
+  deployment_minimum_healthy_percent = 0
+  deployment_maximum_percent         = 100
 
   capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.ec2.name
@@ -224,10 +226,12 @@ resource "aws_ecs_service" "web" {
 }
 
 resource "aws_ecs_service" "worker" {
-  name            = "${local.name_prefix}-worker"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.worker.arn
-  desired_count   = 1
+  name                               = "${local.name_prefix}-worker"
+  cluster                            = aws_ecs_cluster.main.id
+  task_definition                    = aws_ecs_task_definition.worker.arn
+  desired_count                      = 1
+  deployment_minimum_healthy_percent = 0
+  deployment_maximum_percent         = 100
 
   capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.ec2.name
