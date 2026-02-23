@@ -1,0 +1,30 @@
+name: Update ECS Service
+description: Update ECS service with a new task definition and force deployment
+
+inputs:
+  cluster:
+    required: true
+    description: ECS cluster name
+  service:
+    required: true
+    description: ECS service name
+  task-definition-arn:
+    required: true
+    description: ECS task definition ARN
+
+runs:
+  using: composite
+  steps:
+    - name: update service
+      shell: bash
+      env:
+        ECS_CLUSTER: ${{ inputs.cluster }}
+        ECS_SERVICE: ${{ inputs.service }}
+        TASKDEF_ARN: ${{ inputs.task-definition-arn }}
+      run: |
+        set -euo pipefail
+        aws ecs update-service \
+          --cluster "$ECS_CLUSTER" \
+          --service "$ECS_SERVICE" \
+          --task-definition "$TASKDEF_ARN" \
+          --force-new-deployment

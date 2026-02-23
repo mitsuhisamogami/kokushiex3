@@ -1,0 +1,57 @@
+name: Validate Deploy Environment Variables
+description: Validate required deploy variables are not empty
+
+inputs:
+  aws-region:
+    required: true
+    description: AWS region
+  ecr-repository:
+    required: true
+    description: ECR repository name
+  ecs-cluster:
+    required: true
+    description: ECS cluster name
+  web-service:
+    required: true
+    description: ECS web service name
+  worker-service:
+    required: true
+    description: ECS worker service name
+  web-task-family:
+    required: true
+    description: ECS web task definition family
+  worker-task-family:
+    required: true
+    description: ECS worker task definition family
+
+runs:
+  using: composite
+  steps:
+    - name: validate
+      shell: bash
+      env:
+        AWS_REGION: ${{ inputs.aws-region }}
+        ECR_REPOSITORY: ${{ inputs.ecr-repository }}
+        ECS_CLUSTER: ${{ inputs.ecs-cluster }}
+        WEB_SERVICE: ${{ inputs.web-service }}
+        WORKER_SERVICE: ${{ inputs.worker-service }}
+        WEB_TASK_FAMILY: ${{ inputs.web-task-family }}
+        WORKER_TASK_FAMILY: ${{ inputs.worker-task-family }}
+      run: |
+        set -euo pipefail
+        required_vars=(
+          AWS_REGION
+          ECR_REPOSITORY
+          ECS_CLUSTER
+          WEB_SERVICE
+          WORKER_SERVICE
+          WEB_TASK_FAMILY
+          WORKER_TASK_FAMILY
+        )
+
+        for key in "${required_vars[@]}"; do
+          if [ -z "${!key:-}" ]; then
+            echo "::error::Missing required environment variable: ${key}"
+            exit 1
+          fi
+        done

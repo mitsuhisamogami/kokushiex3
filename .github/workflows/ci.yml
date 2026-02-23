@@ -1,0 +1,52 @@
+name: CI
+
+on: [push]
+
+jobs:
+  rspec:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:16
+        ports:
+          - 5432:5432
+        env:
+          TZ: "Asia/Tokyo"
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        options: --health-cmd="pg_isready -U postgres" --health-interval=5s --health-timeout=2s --health-retries=5
+    container:
+      image: ruby:3.3.8
+      env:
+        RAILS_ENV: test
+        RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup ruby bundle
+        uses: ./.github/actions/setup-ruby-bundle
+        with:
+          cache-key-prefix: gems
+      - name: setup db schema
+        run: |
+          export RAILS_ENV=test
+          bin/rails db:create
+          bin/rails db:migrate
+      - name: precompile assets
+        run: bin/rails assets:precompile
+      - name: run spec
+        run: bundle exec rspec
+
+  lint:
+    runs-on: ubuntu-latest
+    container:
+      image: ruby:3.3.8
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup ruby bundle
+        uses: ./.github/actions/setup-ruby-bundle
+        with:
+          cache-key-prefix: gems
+      - name: run rubocop
+        run: bundle exec rubocop
+      - name: run erblint
+        run: bundle exec erblint .

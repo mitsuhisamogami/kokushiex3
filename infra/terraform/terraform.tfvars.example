@@ -1,0 +1,26 @@
+project        = "kokushiex"
+environment    = "prod"
+aws_region     = "ap-northeast-1"
+domain_name    = "example.com"
+app_subdomain  = "app"
+alb_certificate_arn = "" # 証明書ARNを入れるとALBがHTTPS(443)有効化
+
+# ECRにpushしたイメージURIを指定
+app_image = "123456789012.dkr.ecr.ap-northeast-1.amazonaws.com/kokushiex-prod-app:latest"
+
+db_name     = "kokushiex"
+db_username = "kokushiex"
+db_password = "CHANGE_ME"
+# db_engine_version = "16.6" # null(未指定)ならAWSで利用可能な版を自動選択
+
+rails_master_key = "CHANGE_ME"
+secret_key_base  = "CHANGE_ME"
+sentry_dsn       = ""
+sendgrid_api_key = ""
+
+sidekiq_username = "admin"
+sidekiq_password = "CHANGE_ME_STRONG_PASSWORD"
+
+# CloudWatch Alarm通知先（メール）
+# 空文字のままならSNSトピックのみ作成（メール購読なし）
+alarm_notification_email = ""

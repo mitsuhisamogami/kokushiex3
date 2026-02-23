@@ -1,0 +1,29 @@
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_seed:
+        description: "Run seed_fu after db:migrate"
+        required: false
+        default: false
+        type: boolean
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  deploy:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    uses: ./.github/workflows/reusable-ecs-deploy.yml
+    with:
+      environment_name: production
+      dockerfile: Dockerfile.prod
+      run_seed: ${{ github.event_name == 'workflow_dispatch' && inputs.run_seed || false }}
+    secrets: inherit

@@ -1,0 +1,49 @@
+name: Register ECS Task Definition
+description: Register a new ECS task definition revision by replacing the container image
+
+inputs:
+  task-family:
+    required: true
+    description: ECS task definition family name
+  container-name:
+    required: true
+    description: Target container name to update image
+  image-uri:
+    required: true
+    description: Full image URI
+
+outputs:
+  task-definition-arn:
+    description: Registered task definition ARN
+    value: ${{ steps.register.outputs.task_definition_arn }}
+
+runs:
+  using: composite
+  steps:
+    - name: register
+      id: register
+      shell: bash
+      env:
+        TASK_FAMILY: ${{ inputs.task-family }}
+        CONTAINER_NAME: ${{ inputs.container-name }}
+        IMAGE_URI: ${{ inputs.image-uri }}
+      run: |
+        set -euo pipefail
+
+        aws ecs describe-task-definition \
+          --task-definition "$TASK_FAMILY" \
+          --query taskDefinition > taskdef.json
+
+        jq \
+          --arg IMAGE "$IMAGE_URI" \
+          --arg CNAME "$CONTAINER_NAME" \
+          'del(.taskDefinitionArn,.revision,.status,.requiresAttributes,.compatibilities,.registeredAt,.registeredBy)
+          | (.containerDefinitions[] | select(.name == $CNAME) | .image) = $IMAGE' \
+          taskdef.json > taskdef-new.json
+
+        TASK_ARN="$(aws ecs register-task-definition \
+          --cli-input-json file://taskdef-new.json \
+          --query 'taskDefinition.taskDefinitionArn' \
+          --output text)"
+
+        echo "task_definition_arn=$TASK_ARN" >> "$GITHUB_OUTPUT"

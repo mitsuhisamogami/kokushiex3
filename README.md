@@ -137,6 +137,39 @@ DSN が設定されている環境（production / staging）で自動的に Sent
 
 ## 本番環境デプロイ
 
+AWS（ECS on EC2）での最小構成デプロイ手順は以下を参照してください。
+
+- `docs/aws-ecs-ec2-minimum-deploy.md`
+- `docs/aws-identity-center-bootstrap.md`
+- `docs/aws-operations-runbook.md`
+- `infra/terraform/README.md`
+- 構成: `web 1 + sidekiq worker 1 + RDS + ElastiCache + ALB + Cloudflare DNS + WAF`
+
+### GitHub Actions (本番デプロイ)
+
+- ワークフロー:
+  - `.github/workflows/ci.yml`（CI: rspec / lint を並列実行）
+  - `.github/workflows/reusable-ecs-deploy.yml`（共通）
+  - `.github/workflows/deploy-prod.yml`（prod呼び出し）
+- トリガー:
+  - `CI` ワークフロー成功後（`main` ブランチ）
+  - `workflow_dispatch`（手動実行）
+- 実行内容:
+  - 毎回 `db:migrate` を実行してからデプロイ
+  - `seed_fu` は手動実行時の `run_seed=true` 指定時のみ実行
+- `production` Environment に設定する Secrets:
+  - `AWS_ROLE_ARN`（GitHub OIDC で AssumeRole する IAM Role ARN）
+- `production` Environment に設定する Variables:
+  - `AWS_REGION`
+  - `ECR_REPOSITORY`
+  - `ECS_CLUSTER`
+  - `ECS_WEB_SERVICE`
+  - `ECS_WORKER_SERVICE`
+  - `ECS_WEB_TASK_FAMILY`
+  - `ECS_WORKER_TASK_FAMILY`
+  - `ECS_WEB_CONTAINER_NAME`（任意、未設定時は `web`）
+  - `ECS_WORKER_CONTAINER_NAME`（任意、未設定時は `worker`）
+
 ### 管理者ユーザー作成
 
 ```bash
