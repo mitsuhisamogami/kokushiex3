@@ -137,6 +137,13 @@ DSN が設定されている環境（production / staging）で自動的に Sent
 
 ## 本番環境デプロイ
 
+AWS（ECS on EC2）での最小構成デプロイ手順は以下を参照してください。
+
+- `docs/aws-ecs-ec2-minimum-deploy.md`
+- `docs/aws-identity-center-bootstrap.md`
+- `infra/terraform/README.md`
+- 構成: `web 1 + sidekiq worker 1 + RDS + ElastiCache + ALB + Cloudflare DNS + WAF`
+
 ### 管理者ユーザー作成
 
 ```bash
