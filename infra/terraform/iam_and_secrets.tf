@@ -96,13 +96,13 @@ resource "aws_secretsmanager_secret" "app" {
 resource "aws_secretsmanager_secret_version" "app" {
   secret_id = aws_secretsmanager_secret.app.id
   secret_string = jsonencode({
-    DATABASE_URL      = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.main.address}:5432/${var.db_name}"
-    REDIS_URL         = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:6379/0"
-    SECRET_KEY_BASE   = var.secret_key_base
-    RAILS_MASTER_KEY  = var.rails_master_key
-    SENTRY_DSN        = var.sentry_dsn
-    SENDGRID_API_KEY  = var.sendgrid_api_key
-    SIDEKIQ_USERNAME  = var.sidekiq_username
-    SIDEKIQ_PASSWORD  = var.sidekiq_password
+    DATABASE_URL     = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.main.address}:5432/${var.db_name}"
+    REDIS_URL        = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:6379/0"
+    SECRET_KEY_BASE  = var.secret_key_base
+    RAILS_MASTER_KEY = var.rails_master_key
+    SENTRY_DSN       = var.sentry_dsn
+    SENDGRID_API_KEY = var.sendgrid_api_key
+    SIDEKIQ_USERNAME = var.sidekiq_username
+    SIDEKIQ_PASSWORD = var.sidekiq_password
   })
 }

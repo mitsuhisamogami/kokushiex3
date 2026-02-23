@@ -110,8 +110,8 @@ resource "aws_ecs_task_definition" "web" {
 
   container_definitions = jsonencode([
     {
-      name  = "web"
-      image = var.app_image
+      name      = "web"
+      image     = var.app_image
       essential = true
       command   = ["bundle", "exec", "puma", "-C", "config/puma.rb"]
       portMappings = [
@@ -163,8 +163,8 @@ resource "aws_ecs_task_definition" "worker" {
 
   container_definitions = jsonencode([
     {
-      name  = "worker"
-      image = var.app_image
+      name      = "worker"
+      image     = var.app_image
       essential = true
       command   = ["bundle", "exec", "sidekiq"]
       environment = [
