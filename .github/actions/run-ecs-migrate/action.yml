@@ -1,3 +1,6 @@
+# Purpose:
+# - web タスク定義を使って one-shot task を起動し、db:migrate（必要なら db:seed_fu）を実行する。
+# - 実行中の worker は一時的に desired=0 へ落としてリソースを確保し、終了時に元へ戻す。
 name: Run ECS Migrate Task
 description: Run db:migrate (and optional seed_fu) as one-shot ECS task
 

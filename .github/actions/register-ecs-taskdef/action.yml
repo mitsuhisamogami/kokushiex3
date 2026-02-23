@@ -1,3 +1,6 @@
+# Purpose:
+# - 既存のタスク定義を取得し、指定コンテナの image のみ差し替えて新リビジョンを登録する。
+# - デプロイ側は出力された task-definition-arn を利用して service 更新を行う。
 name: Register ECS Task Definition
 description: Register a new ECS task definition revision by replacing the container image
 
