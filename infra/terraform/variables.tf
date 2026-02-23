@@ -123,3 +123,9 @@ variable "sidekiq_password" {
   description = "Sidekiq basic auth password"
   sensitive   = true
 }
+
+variable "alarm_notification_email" {
+  type        = string
+  description = "Email address for CloudWatch alarm notifications (empty to skip email subscription)"
+  default     = ""
+}

@@ -33,6 +33,8 @@ terraform apply
 - `rails_master_key` も Terraform 変数で渡し、ECS に `RAILS_MASTER_KEY` として注入する
 - Terraform apply 後、Cloudflare DNS で `app` の CNAME を `alb_dns_name` に向ける
 - `alb_certificate_arn` を指定すると ALB に HTTPS(443) リスナーを作成し、HTTP は 443 へリダイレクト
+- CloudWatch Alarm は無料枠内を優先した最小9個を定義済み（ECS/ALB/RDS）
+- `alarm_notification_email` を設定すると SNS 経由でメール通知を受信できる（初回はメール承認が必要）
 
 ## デプロイ後の手順
 

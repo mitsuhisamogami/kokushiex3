@@ -33,6 +33,11 @@ output "worker_service_name" {
   description = "ECS worker service name"
 }
 
+output "alarm_sns_topic_arn" {
+  value       = aws_sns_topic.alerts.arn
+  description = "SNS topic ARN used by CloudWatch alarms"
+}
+
 output "rds_endpoint" {
   value       = aws_db_instance.main.address
   description = "RDS endpoint"

@@ -20,3 +20,7 @@ sendgrid_api_key = ""
 
 sidekiq_username = "admin"
 sidekiq_password = "CHANGE_ME_STRONG_PASSWORD"
+
+# CloudWatch Alarm通知先（メール）
+# 空文字のままならSNSトピックのみ作成（メール購読なし）
+alarm_notification_email = ""
