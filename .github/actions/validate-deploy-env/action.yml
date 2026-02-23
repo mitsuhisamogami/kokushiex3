@@ -1,3 +1,6 @@
+# Purpose:
+# - デプロイで必須となる Environment Variables の未設定を早期検知する。
+# - 途中で失敗させないため、workflow の先頭で入力値をガードする。
 name: Validate Deploy Environment Variables
 description: Validate required deploy variables are not empty
 
@@ -23,6 +26,9 @@ inputs:
   worker-task-family:
     required: true
     description: ECS worker task definition family
+  ecs-asg-name:
+    required: true
+    description: ECS EC2 Auto Scaling Group name
 
 runs:
   using: composite
@@ -37,6 +43,7 @@ runs:
         WORKER_SERVICE: ${{ inputs.worker-service }}
         WEB_TASK_FAMILY: ${{ inputs.web-task-family }}
         WORKER_TASK_FAMILY: ${{ inputs.worker-task-family }}
+        ECS_ASG_NAME: ${{ inputs.ecs-asg-name }}
       run: |
         set -euo pipefail
         required_vars=(
@@ -47,6 +54,7 @@ runs:
           WORKER_SERVICE
           WEB_TASK_FAMILY
           WORKER_TASK_FAMILY
+          ECS_ASG_NAME
         )
 
         for key in "${required_vars[@]}"; do

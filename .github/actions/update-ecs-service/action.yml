@@ -1,3 +1,6 @@
+# Purpose:
+# - 指定 service の task definition を更新し、force-new-deployment で即時反映させる。
+# - web/worker 共通で使える最小単位の ECS 更新 action。
 name: Update ECS Service
 description: Update ECS service with a new task definition and force deployment
 
