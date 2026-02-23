@@ -21,6 +21,9 @@ jobs:
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    permissions:
+      id-token: write
+      contents: read
     uses: ./.github/workflows/reusable-ecs-deploy.yml
     with:
       environment_name: production
