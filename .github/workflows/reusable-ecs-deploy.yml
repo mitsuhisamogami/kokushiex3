@@ -16,8 +16,73 @@ on:
         default: false
 
 jobs:
+  pre-scale-asg:
+    name: Pre-scale ASG (${{ inputs.environment_name }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment_name }}
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      original_desired: ${{ steps.scale.outputs.original_desired }}
+      original_max: ${{ steps.scale.outputs.original_max }}
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECS_ASG_NAME: ${{ vars.ECS_ASG_NAME }}
+    steps:
+      - name: Validate ASG variables
+        run: |
+          set -euo pipefail
+          if [ -z "${AWS_REGION:-}" ] || [ -z "${ECS_ASG_NAME:-}" ]; then
+            echo "::error::Missing required environment variable: AWS_REGION or ECS_ASG_NAME"
+            exit 1
+          fi
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Scale out ECS ASG for deployment
+        id: scale
+        run: |
+          set -euo pipefail
+
+          # 1台構成では migration 用 one-shot task と rolling update が同時に動けず、
+          # ENI/キャパシティ不足でデプロイ失敗しやすいため、デプロイ時のみ一時的に2台化する。
+          original_desired="$(aws autoscaling describe-auto-scaling-groups \
+            --auto-scaling-group-names "$ECS_ASG_NAME" \
+            --query 'AutoScalingGroups[0].DesiredCapacity' \
+            --output text)"
+          original_max="$(aws autoscaling describe-auto-scaling-groups \
+            --auto-scaling-group-names "$ECS_ASG_NAME" \
+            --query 'AutoScalingGroups[0].MaxSize' \
+            --output text)"
+
+          if [ -z "$original_desired" ] || [ "$original_desired" = "None" ] || [ -z "$original_max" ] || [ "$original_max" = "None" ]; then
+            echo "::error::Failed to read ASG settings for $ECS_ASG_NAME"
+            exit 1
+          fi
+
+          target_max="$original_max"
+          if [ "$original_max" -lt 2 ]; then
+            target_max=2
+          fi
+
+          aws autoscaling update-auto-scaling-group \
+            --auto-scaling-group-name "$ECS_ASG_NAME" \
+            --desired-capacity 2 \
+            --max-size "$target_max"
+
+          aws autoscaling wait group-in-service --auto-scaling-group-names "$ECS_ASG_NAME"
+
+          echo "original_desired=$original_desired" >> "$GITHUB_OUTPUT"
+          echo "original_max=$original_max" >> "$GITHUB_OUTPUT"
+
   deploy:
     name: Build and Deploy (${{ inputs.environment_name }})
+    needs: pre-scale-asg
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment_name }}
     permissions:
@@ -30,6 +95,7 @@ jobs:
       AWS_REGION: ${{ vars.AWS_REGION }}
       ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
       ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+      ECS_ASG_NAME: ${{ vars.ECS_ASG_NAME }}
       WEB_SERVICE: ${{ vars.ECS_WEB_SERVICE }}
       WORKER_SERVICE: ${{ vars.ECS_WORKER_SERVICE }}
       WEB_TASK_FAMILY: ${{ vars.ECS_WEB_TASK_FAMILY }}
@@ -47,6 +113,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           ecr-repository: ${{ env.ECR_REPOSITORY }}
           ecs-cluster: ${{ env.ECS_CLUSTER }}
+          ecs-asg-name: ${{ env.ECS_ASG_NAME }}
           web-service: ${{ env.WEB_SERVICE }}
           worker-service: ${{ env.WORKER_SERVICE }}
           web-task-family: ${{ env.WEB_TASK_FAMILY }}
@@ -131,6 +198,47 @@ jobs:
             echo "- Environment: \`${{ inputs.environment_name }}\`"
             echo "- Run seed: \`${{ inputs.run_seed }}\`"
             echo "- Image: \`${{ steps.image.outputs.uri }}\`"
+            echo "- ASG: \`${ECS_ASG_NAME}\` (scaled out to 2 during deploy)"
             echo "- Web task def: \`${{ steps.web-taskdef.outputs.task-definition-arn }}\`"
             echo "- Worker task def: \`${{ steps.worker-taskdef.outputs.task-definition-arn }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  restore-scale-asg:
+    name: Restore ASG (${{ inputs.environment_name }})
+    needs: [pre-scale-asg, deploy]
+    if: always() && needs.pre-scale-asg.result == 'success'
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment_name }}
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECS_ASG_NAME: ${{ vars.ECS_ASG_NAME }}
+      ORIGINAL_DESIRED: ${{ needs.pre-scale-asg.outputs.original_desired }}
+      ORIGINAL_MAX: ${{ needs.pre-scale-asg.outputs.original_max }}
+    steps:
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Restore ECS ASG capacity
+        run: |
+          set -euo pipefail
+
+          # デプロイ成否にかかわらず、通常運用コストを維持するため元の台数へ戻す。
+          if [ -z "${ORIGINAL_DESIRED:-}" ] || [ -z "${ORIGINAL_MAX:-}" ]; then
+            echo "::warning::Skip restore because original ASG values are empty"
+            exit 0
+          fi
+
+          aws autoscaling update-auto-scaling-group \
+            --auto-scaling-group-name "$ECS_ASG_NAME" \
+            --desired-capacity "$ORIGINAL_DESIRED" \
+            --max-size "$ORIGINAL_MAX"
+
+          if [ "$ORIGINAL_DESIRED" -gt 0 ]; then
+            aws autoscaling wait group-in-service --auto-scaling-group-names "$ECS_ASG_NAME"
+          fi

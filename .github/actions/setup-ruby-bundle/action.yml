@@ -1,3 +1,6 @@
+# Purpose:
+# - CI で Ruby/Bundler の共通セットアップを行う（path 設定、cache 復元、bundle install）。
+# - 複数 workflow/job で同じ Gem セットアップ処理を再利用するための部品。
 name: Setup Ruby Bundle
 description: Configure bundler path, restore cache, and install gems when needed
 
