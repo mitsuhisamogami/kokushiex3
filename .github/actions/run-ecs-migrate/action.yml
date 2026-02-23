@@ -1,0 +1,112 @@
+name: Run ECS Migrate Task
+description: Run db:migrate (and optional seed_fu) as one-shot ECS task
+
+inputs:
+  cluster:
+    required: true
+    description: ECS cluster name
+  web-service:
+    required: true
+    description: ECS web service name
+  worker-service:
+    required: true
+    description: ECS worker service name
+  web-taskdef-arn:
+    required: true
+    description: Web task definition ARN
+  web-container-name:
+    required: true
+    description: Web container name
+  run-seed:
+    required: false
+    description: Run seed_fu after db:migrate
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: run migrate task
+      shell: bash
+      env:
+        ECS_CLUSTER: ${{ inputs.cluster }}
+        WEB_SERVICE: ${{ inputs.web-service }}
+        WORKER_SERVICE: ${{ inputs.worker-service }}
+        WEB_TASKDEF_ARN: ${{ inputs.web-taskdef-arn }}
+        WEB_CONTAINER_NAME: ${{ inputs.web-container-name }}
+        RUN_SEED: ${{ inputs.run-seed }}
+      run: |
+        set -euo pipefail
+
+        worker_desired="$(aws ecs describe-services \
+          --cluster "$ECS_CLUSTER" \
+          --services "$WORKER_SERVICE" \
+          --query 'services[0].desiredCount' \
+          --output text)"
+
+        scaled_down=0
+        cleanup() {
+          if [ "$scaled_down" = "1" ]; then
+            aws ecs update-service \
+              --cluster "$ECS_CLUSTER" \
+              --service "$WORKER_SERVICE" \
+              --desired-count "$worker_desired" >/dev/null
+            aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$WORKER_SERVICE"
+          fi
+        }
+        trap cleanup EXIT
+
+        if [ "${worker_desired}" != "0" ]; then
+          aws ecs update-service \
+            --cluster "$ECS_CLUSTER" \
+            --service "$WORKER_SERVICE" \
+            --desired-count 0 >/dev/null
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$WORKER_SERVICE"
+          scaled_down=1
+        fi
+
+        service_json="$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$WEB_SERVICE")"
+        subnets="$(echo "$service_json" | jq -r '.services[0].networkConfiguration.awsvpcConfiguration.subnets | join(",")')"
+        sgs="$(echo "$service_json" | jq -r '.services[0].networkConfiguration.awsvpcConfiguration.securityGroups | join(",")')"
+        assign_public_ip="$(echo "$service_json" | jq -r '.services[0].networkConfiguration.awsvpcConfiguration.assignPublicIp')"
+
+        override_command="bundle exec rails db:migrate"
+        if [ "$RUN_SEED" = "true" ]; then
+          override_command="${override_command} && bundle exec rails db:seed_fu"
+        fi
+
+        overrides="$(jq -n \
+          --arg cname "$WEB_CONTAINER_NAME" \
+          --arg cmd "$override_command" \
+          '{containerOverrides:[{name:$cname,command:["sh","-lc",$cmd]}]}')"
+
+        task_arn="$(aws ecs run-task \
+          --cluster "$ECS_CLUSTER" \
+          --launch-type EC2 \
+          --task-definition "$WEB_TASKDEF_ARN" \
+          --network-configuration "awsvpcConfiguration={subnets=[$subnets],securityGroups=[$sgs],assignPublicIp=$assign_public_ip}" \
+          --overrides "$overrides" \
+          --query 'tasks[0].taskArn' \
+          --output text)"
+
+        if [ -z "$task_arn" ] || [ "$task_arn" = "None" ]; then
+          echo "::error::Failed to run migration task"
+          exit 1
+        fi
+
+        aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks "$task_arn"
+
+        exit_code="$(aws ecs describe-tasks \
+          --cluster "$ECS_CLUSTER" \
+          --tasks "$task_arn" \
+          --query 'tasks[0].containers[0].exitCode' \
+          --output text)"
+
+        if [ "${exit_code}" != "0" ]; then
+          stopped_reason="$(aws ecs describe-tasks \
+            --cluster "$ECS_CLUSTER" \
+            --tasks "$task_arn" \
+            --query 'tasks[0].stoppedReason' \
+            --output text)"
+          echo "::error::Migration task failed. reason=${stopped_reason} exit_code=${exit_code}"
+          exit 1
+        fi

@@ -1,0 +1,136 @@
+name: Reusable ECS Deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment_name:
+        required: true
+        type: string
+      dockerfile:
+        required: false
+        type: string
+        default: Dockerfile.prod
+      run_seed:
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  deploy:
+    name: Build and Deploy (${{ inputs.environment_name }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment_name }}
+    permissions:
+      id-token: write
+      contents: read
+    concurrency:
+      group: deploy-${{ inputs.environment_name }}
+      cancel-in-progress: false
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+      WEB_SERVICE: ${{ vars.ECS_WEB_SERVICE }}
+      WORKER_SERVICE: ${{ vars.ECS_WORKER_SERVICE }}
+      WEB_TASK_FAMILY: ${{ vars.ECS_WEB_TASK_FAMILY }}
+      WORKER_TASK_FAMILY: ${{ vars.ECS_WORKER_TASK_FAMILY }}
+      WEB_CONTAINER_NAME: ${{ vars.ECS_WEB_CONTAINER_NAME || 'web' }}
+      WORKER_CONTAINER_NAME: ${{ vars.ECS_WORKER_CONTAINER_NAME || 'worker' }}
+      IMAGE_TAG: ${{ github.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required environment variables
+        uses: ./.github/actions/validate-deploy-env
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          ecr-repository: ${{ env.ECR_REPOSITORY }}
+          ecs-cluster: ${{ env.ECS_CLUSTER }}
+          web-service: ${{ env.WEB_SERVICE }}
+          worker-service: ${{ env.WORKER_SERVICE }}
+          web-task-family: ${{ env.WEB_TASK_FAMILY }}
+          worker-task-family: ${{ env.WORKER_TASK_FAMILY }}
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image URI
+        id: image
+        run: |
+          echo "uri=${{ steps.login-ecr.outputs.registry }}/${ECR_REPOSITORY}:${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push image (linux/amd64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ inputs.dockerfile }}
+          push: true
+          platforms: linux/amd64
+          tags: ${{ steps.image.outputs.uri }}
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Register web task definition revision
+        id: web-taskdef
+        uses: ./.github/actions/register-ecs-taskdef
+        with:
+          task-family: ${{ env.WEB_TASK_FAMILY }}
+          container-name: ${{ env.WEB_CONTAINER_NAME }}
+          image-uri: ${{ steps.image.outputs.uri }}
+
+      - name: Register worker task definition revision
+        id: worker-taskdef
+        uses: ./.github/actions/register-ecs-taskdef
+        with:
+          task-family: ${{ env.WORKER_TASK_FAMILY }}
+          container-name: ${{ env.WORKER_CONTAINER_NAME }}
+          image-uri: ${{ steps.image.outputs.uri }}
+
+      - name: Run database migrate (and optional seed)
+        uses: ./.github/actions/run-ecs-migrate
+        with:
+          cluster: ${{ env.ECS_CLUSTER }}
+          web-service: ${{ env.WEB_SERVICE }}
+          worker-service: ${{ env.WORKER_SERVICE }}
+          web-taskdef-arn: ${{ steps.web-taskdef.outputs.task-definition-arn }}
+          web-container-name: ${{ env.WEB_CONTAINER_NAME }}
+          run-seed: ${{ inputs.run_seed }}
+
+      - name: Update web service
+        uses: ./.github/actions/update-ecs-service
+        with:
+          cluster: ${{ env.ECS_CLUSTER }}
+          service: ${{ env.WEB_SERVICE }}
+          task-definition-arn: ${{ steps.web-taskdef.outputs.task-definition-arn }}
+
+      - name: Update worker service
+        uses: ./.github/actions/update-ecs-service
+        with:
+          cluster: ${{ env.ECS_CLUSTER }}
+          service: ${{ env.WORKER_SERVICE }}
+          task-definition-arn: ${{ steps.worker-taskdef.outputs.task-definition-arn }}
+
+      - name: Wait for ECS services to stabilize
+        run: |
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$WEB_SERVICE" "$WORKER_SERVICE"
+
+      - name: Deployment summary
+        run: |
+          {
+            echo "### ECS Deploy Succeeded"
+            echo ""
+            echo "- Environment: \`${{ inputs.environment_name }}\`"
+            echo "- Run seed: \`${{ inputs.run_seed }}\`"
+            echo "- Image: \`${{ steps.image.outputs.uri }}\`"
+            echo "- Web task def: \`${{ steps.web-taskdef.outputs.task-definition-arn }}\`"
+            echo "- Worker task def: \`${{ steps.worker-taskdef.outputs.task-definition-arn }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
