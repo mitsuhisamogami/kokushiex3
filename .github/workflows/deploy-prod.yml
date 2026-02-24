@@ -3,6 +3,11 @@ name: Deploy Production
 on:
   workflow_dispatch:
     inputs:
+      deploy_ref:
+        description: "Git ref to deploy (branch or tag)"
+        required: false
+        default: "main"
+        type: string
       run_seed:
         description: "Run seed_fu after db:migrate"
         required: false
@@ -18,5 +23,6 @@ jobs:
     with:
       environment_name: production
       dockerfile: Dockerfile.prod
+      deploy_ref: ${{ inputs.deploy_ref || 'main' }}
       run_seed: ${{ inputs.run_seed || false }}
     secrets: inherit
