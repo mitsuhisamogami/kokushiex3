@@ -98,8 +98,8 @@ jobs:
           echo "original_desired=$original_desired" >> "$GITHUB_OUTPUT"
           echo "original_max=$original_max" >> "$GITHUB_OUTPUT"
 
-  deploy:
-    name: Build and Deploy (${{ inputs.environment_name }})
+  prepare-artifacts:
+    name: Prepare Artifacts (${{ inputs.environment_name }})
     needs: pre-scale-asg
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment_name }}
@@ -120,6 +120,10 @@ jobs:
       WORKER_TASK_FAMILY: ${{ vars.ECS_WORKER_TASK_FAMILY }}
       WEB_CONTAINER_NAME: ${{ vars.ECS_WEB_CONTAINER_NAME || 'web' }}
       WORKER_CONTAINER_NAME: ${{ vars.ECS_WORKER_CONTAINER_NAME || 'worker' }}
+    outputs:
+      image_uri: ${{ steps.image.outputs.uri }}
+      web_taskdef_arn: ${{ steps.web-taskdef.outputs.task-definition-arn }}
+      worker_taskdef_arn: ${{ steps.worker-taskdef.outputs.task-definition-arn }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -182,34 +186,107 @@ jobs:
           container-name: ${{ env.WORKER_CONTAINER_NAME }}
           image-uri: ${{ steps.image.outputs.uri }}
 
+  # Schema 互換性リスクを避けるため、migrate は deploy より先に必ず直列実行する。
+  migrate-db:
+    name: Run Migrate (${{ inputs.environment_name }})
+    needs: prepare-artifacts
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment_name }}
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+      WEB_SERVICE: ${{ vars.ECS_WEB_SERVICE }}
+      WORKER_SERVICE: ${{ vars.ECS_WORKER_SERVICE }}
+      WEB_CONTAINER_NAME: ${{ vars.ECS_WEB_CONTAINER_NAME || 'web' }}
+    steps:
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
       - name: Run database migrate (and optional seed)
         uses: ./.github/actions/run-ecs-migrate
         with:
           cluster: ${{ env.ECS_CLUSTER }}
           web-service: ${{ env.WEB_SERVICE }}
           worker-service: ${{ env.WORKER_SERVICE }}
-          web-taskdef-arn: ${{ steps.web-taskdef.outputs.task-definition-arn }}
+          web-taskdef-arn: ${{ needs.prepare-artifacts.outputs.web_taskdef_arn }}
           web-container-name: ${{ env.WEB_CONTAINER_NAME }}
           run-seed: ${{ inputs.run_seed }}
+
+  # migrate 完了後は web/worker を並列更新し、services-stable の待機開始を前倒しする。
+  deploy-web:
+    name: Deploy Web (${{ inputs.environment_name }})
+    needs: [prepare-artifacts, migrate-db]
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment_name }}
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+      WEB_SERVICE: ${{ vars.ECS_WEB_SERVICE }}
+    steps:
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Update web service
         uses: ./.github/actions/update-ecs-service
         with:
           cluster: ${{ env.ECS_CLUSTER }}
           service: ${{ env.WEB_SERVICE }}
-          task-definition-arn: ${{ steps.web-taskdef.outputs.task-definition-arn }}
+          task-definition-arn: ${{ needs.prepare-artifacts.outputs.web_taskdef_arn }}
+
+      - name: Wait for web service to stabilize
+        run: |
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$WEB_SERVICE"
+
+  # worker も web と並列で更新・待機させて全体デプロイ時間を短縮する。
+  deploy-worker:
+    name: Deploy Worker (${{ inputs.environment_name }})
+    needs: [prepare-artifacts, migrate-db]
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment_name }}
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+      WORKER_SERVICE: ${{ vars.ECS_WORKER_SERVICE }}
+    steps:
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Update worker service
         uses: ./.github/actions/update-ecs-service
         with:
           cluster: ${{ env.ECS_CLUSTER }}
           service: ${{ env.WORKER_SERVICE }}
-          task-definition-arn: ${{ steps.worker-taskdef.outputs.task-definition-arn }}
+          task-definition-arn: ${{ needs.prepare-artifacts.outputs.worker_taskdef_arn }}
 
-      - name: Wait for ECS services to stabilize
+      - name: Wait for worker service to stabilize
         run: |
-          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$WEB_SERVICE" "$WORKER_SERVICE"
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$WORKER_SERVICE"
 
+  deployment-summary:
+    name: Deployment Summary (${{ inputs.environment_name }})
+    needs: [prepare-artifacts, deploy-web, deploy-worker]
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment_name }}
+    if: needs.deploy-web.result == 'success' && needs.deploy-worker.result == 'success'
+    steps:
       - name: Deployment summary
         run: |
           {
@@ -218,15 +295,15 @@ jobs:
             echo "- Environment: \`${{ inputs.environment_name }}\`"
             echo "- Deploy ref: \`${{ inputs.deploy_ref }}\`"
             echo "- Run seed: \`${{ inputs.run_seed }}\`"
-            echo "- Image: \`${{ steps.image.outputs.uri }}\`"
-            echo "- ASG: \`${ECS_ASG_NAME}\` (scaled out to 2 during deploy)"
-            echo "- Web task def: \`${{ steps.web-taskdef.outputs.task-definition-arn }}\`"
-            echo "- Worker task def: \`${{ steps.worker-taskdef.outputs.task-definition-arn }}\`"
+            echo "- Image: \`${{ needs.prepare-artifacts.outputs.image_uri }}\`"
+            echo "- ASG: \`${{ vars.ECS_ASG_NAME }}\` (scaled out to 2 during deploy)"
+            echo "- Web task def: \`${{ needs.prepare-artifacts.outputs.web_taskdef_arn }}\`"
+            echo "- Worker task def: \`${{ needs.prepare-artifacts.outputs.worker_taskdef_arn }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
   restore-scale-asg:
     name: Restore ASG (${{ inputs.environment_name }})
-    needs: [pre-scale-asg, deploy]
+    needs: [pre-scale-asg, prepare-artifacts, migrate-db, deploy-web, deploy-worker]
     if: always() && needs.pre-scale-asg.result == 'success'
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment_name }}
