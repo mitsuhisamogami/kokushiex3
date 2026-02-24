@@ -74,7 +74,8 @@ runs:
 
         override_command="bundle exec rails db:migrate"
         if [ "$RUN_SEED" = "true" ]; then
-          override_command="${override_command} && bundle exec rails db:seed_fu"
+          # 現在の seed-fu 管理対象は db/fixtures/development 配下のため明示指定する。
+          override_command="${override_command} && bundle exec rails db:seed_fu FIXTURE_PATH=db/fixtures/development"
         fi
 
         overrides="$(jq -n \
