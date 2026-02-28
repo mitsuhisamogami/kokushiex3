@@ -6,7 +6,7 @@ resource "aws_elasticache_subnet_group" "main" {
 resource "aws_elasticache_replication_group" "main" {
   replication_group_id       = "${replace(local.name_prefix, "-", "")}redis"
   description                = "${local.name_prefix} redis"
-  node_type                  = "cache.t3.micro"
+  node_type                  = "cache.t4g.micro"
   engine                     = "redis"
   engine_version             = "7.1"
   num_cache_clusters         = 1
@@ -20,4 +20,3 @@ resource "aws_elasticache_replication_group" "main" {
 
   tags = local.common_tags
 }
-
