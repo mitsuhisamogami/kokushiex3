@@ -32,29 +32,8 @@ services:
     ports:
       - "5432:5432"
 
-  redis:
-    image: "redis:latest"
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-
-  sidekiq:
-    build: .
-    environment:
-      REDIS_URL: "redis://redis:6379"
-    command: bundle exec sidekiq
-    volumes:
-      - .:/app
-      - gem_data:/usr/local/bundle
-    depends_on:
-      - redis
-      - db
-    tty: true
-    stdin_open: true
 # PC上にdb-volumeという名前でデータ領域が作成される
 # コンテナを作り直したとしてもPC上に残るようにするために設定
 volumes:
   gem_data:
   postgres_data:
-  redis_data:

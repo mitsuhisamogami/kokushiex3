@@ -80,7 +80,7 @@ class User < ApplicationRecord
     update!(guest_limit_reached_at: Time.current)
   end
 
-  # Sidekiqジョブや rake タスクから呼び出し、ゲストを削除する
+  # 定期実行の rake タスクや runner から呼び出し、ゲストを削除する
   # 破壊的に削除を行い、削除した件数を返す
   def self.cleanup_old_guests!
     deleted = 0

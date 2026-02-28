@@ -1,5 +1,4 @@
 Rails.application.routes.draw do
-  require 'sidekiq/web'
   devise_for :users, controllers: {
     registrations: 'users/registrations',
     sessions: 'users/sessions',
@@ -36,8 +35,4 @@ Rails.application.routes.draw do
     mount LetterOpenerWeb::Engine, at: "/letter_opener"
   end
 
-  # Sidekiq管理画面へのアクセス制御
-  require_relative '../lib/sidekiq_admin_middleware'
-  Sidekiq::Web.use SidekiqAdminMiddleware
-  mount Sidekiq::Web, at: '/sidekiq'
 end
