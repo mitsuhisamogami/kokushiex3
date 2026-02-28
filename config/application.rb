@@ -11,7 +11,6 @@ require "action_mailer/railtie"
 require "action_mailbox/engine"
 require "action_text/engine"
 require "action_view/railtie"
-require "action_cable/engine"
 # require "rails/test_unit/railtie"
 
 # Require the gems listed in Gemfile, including any gems
@@ -39,7 +38,8 @@ module App
 
     # Don't generate system test files.
     config.generators.system_tests = nil
-    config.active_job.queue_adapter = :sidekiq
+    # Sidekiq常駐ワーカーを使わないため、プロセス内実行の既定アダプタを使用する
+    config.active_job.queue_adapter = :async
 
     # Rack::Attackを有効化
     config.middleware.use Rack::Attack
