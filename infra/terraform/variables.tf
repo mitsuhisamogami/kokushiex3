@@ -62,6 +62,12 @@ variable "ec2_instance_type" {
   default     = "t3.small"
 }
 
+variable "nat_instance_type" {
+  type        = string
+  description = "NAT instance type"
+  default     = "t3.nano"
+}
+
 variable "db_name" {
   type        = string
   description = "RDS database name"

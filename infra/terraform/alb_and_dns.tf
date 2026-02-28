@@ -16,7 +16,7 @@ resource "aws_lb_target_group" "web" {
   target_type = "ip"
 
   health_check {
-    path                = "/up"
+    path                = "/"
     protocol            = "HTTP"
     matcher             = "200-399"
     healthy_threshold   = 2

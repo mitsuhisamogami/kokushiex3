@@ -41,22 +41,86 @@ resource "aws_subnet" "private" {
   })
 }
 
-resource "aws_eip" "nat" {
-  domain = "vpc"
+resource "aws_security_group" "nat" {
+  name        = "${local.name_prefix}-nat-sg"
+  description = "NAT instance security group"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = var.private_subnet_cidrs
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   tags = merge(local.common_tags, {
-    Name = "${local.name_prefix}-nat-eip"
+    Name = "${local.name_prefix}-nat-sg"
   })
 }
 
-resource "aws_nat_gateway" "main" {
-  subnet_id     = aws_subnet.public[0].id
-  allocation_id = aws_eip.nat.id
+data "aws_ami" "nat" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
+resource "aws_instance" "nat" {
+  ami                         = data.aws_ami.nat.id
+  instance_type               = var.nat_instance_type
+  subnet_id                   = aws_subnet.public[0].id
+  vpc_security_group_ids      = [aws_security_group.nat.id]
+  associate_public_ip_address = true
+  source_dest_check           = false
+
+  user_data = <<-EOT
+    #!/bin/bash
+    set -euxo pipefail
+
+    yum update -y
+    yum install -y iptables-services
+
+    cat <<'SYSCTL' > /etc/sysctl.d/99-nat.conf
+    net.ipv4.ip_forward = 1
+    SYSCTL
+    sysctl -p /etc/sysctl.d/99-nat.conf
+
+    PRIMARY_IFACE=$(ip route show default | awk '/default/ {print $5; exit}')
+    iptables -t nat -A POSTROUTING -o $${PRIMARY_IFACE} -j MASQUERADE
+
+    service iptables save
+    systemctl enable iptables
+    systemctl restart iptables
+  EOT
 
   depends_on = [aws_internet_gateway.main]
 
   tags = merge(local.common_tags, {
-    Name = "${local.name_prefix}-nat"
+    Name = "${local.name_prefix}-nat-instance"
+  })
+}
+
+resource "aws_eip" "nat" {
+  domain   = "vpc"
+  instance = aws_instance.nat.id
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-nat-eip"
   })
 }
 
@@ -83,14 +147,15 @@ resource "aws_route_table_association" "public" {
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main.id
-  }
-
   tags = merge(local.common_tags, {
     Name = "${local.name_prefix}-private-rt"
   })
+}
+
+resource "aws_route" "private_default_via_nat_instance" {
+  route_table_id         = aws_route_table.private.id
+  destination_cidr_block = "0.0.0.0/0"
+  network_interface_id   = aws_instance.nat.primary_network_interface_id
 }
 
 resource "aws_route_table_association" "private" {
@@ -99,4 +164,3 @@ resource "aws_route_table_association" "private" {
   subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private.id
 }
-

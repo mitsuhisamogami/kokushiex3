@@ -41,7 +41,7 @@ resource "aws_launch_template" "ecs" {
 
 resource "aws_autoscaling_group" "ecs" {
   name                = "${local.name_prefix}-ecs-asg"
-  max_size            = 1
+  max_size            = 2
   min_size            = 1
   desired_capacity    = 1
   vpc_zone_identifier = aws_subnet.private[*].id
@@ -199,6 +199,7 @@ resource "aws_ecs_service" "web" {
   cluster                            = aws_ecs_cluster.main.id
   task_definition                    = aws_ecs_task_definition.web.arn
   desired_count                      = 1
+  enable_execute_command             = true
   deployment_minimum_healthy_percent = 0
   deployment_maximum_percent         = 100
 
@@ -222,6 +223,10 @@ resource "aws_ecs_service" "web" {
 
   depends_on = [aws_lb_target_group.web, aws_ecs_cluster_capacity_providers.main]
 
+  lifecycle {
+    ignore_changes = [task_definition]
+  }
+
   tags = local.common_tags
 }
 
@@ -230,6 +235,7 @@ resource "aws_ecs_service" "worker" {
   cluster                            = aws_ecs_cluster.main.id
   task_definition                    = aws_ecs_task_definition.worker.arn
   desired_count                      = 1
+  enable_execute_command             = true
   deployment_minimum_healthy_percent = 0
   deployment_maximum_percent         = 100
 
@@ -246,6 +252,10 @@ resource "aws_ecs_service" "worker" {
   }
 
   depends_on = [aws_ecs_cluster_capacity_providers.main]
+
+  lifecycle {
+    ignore_changes = [task_definition]
+  }
 
   tags = local.common_tags
 }

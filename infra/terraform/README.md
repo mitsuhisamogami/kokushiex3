@@ -26,6 +26,7 @@ terraform apply
 
 ## 注意点
 
+- NATはNAT GatewayではなくNAT Instance（単一AZ）を利用。障害時はprivate subnetの外向き通信が停止するため、必要に応じて冗長化を検討してください
 - 本番用 state は S3 backend + DynamoDB lock への変更を推奨（`providers.tf` の backend を有効化）
 - まずは最小構成で固定スケール（ASG min/max/desired = 1）
 - `app_image` は ECR に push 済みイメージ URI を指定

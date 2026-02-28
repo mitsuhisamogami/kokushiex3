@@ -11,7 +11,7 @@ resource "aws_db_instance" "main" {
   identifier             = "${local.name_prefix}-db"
   engine                 = "postgres"
   engine_version         = var.db_engine_version
-  instance_class         = "db.t3.micro"
+  instance_class         = "db.t4g.micro"
   allocated_storage      = 20
   storage_type           = "gp3"
   db_name                = var.db_name
