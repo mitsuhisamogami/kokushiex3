@@ -24,17 +24,21 @@
 
         <div class="mt-7 flex flex-col gap-4 sm:flex-row">
           <%= link_to new_user_registration_path,
-                      class: "inline-flex min-h-14 items-center justify-center gap-3 rounded-lg bg-blue-800 px-8 py-3 text-lg font-bold text-white shadow-xl shadow-blue-900/20 transition hover:bg-blue-900" do %>
+                      class: 'inline-flex min-h-14 items-center justify-center gap-3 rounded-lg bg-blue-700 ' \
+                             'px-8 py-3 text-lg font-bold text-white shadow-xl shadow-blue-800/20 transition ' \
+                             'hover:bg-blue-800' do %>
             <svg class="block h-6 w-6 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0M19.5 8.25v6M22.5 11.25h-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0M19.5 8.25v6M22.5 11.25h-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             無料会員登録
           <% end %>
 
           <%= link_to new_user_session_path,
-                      class: "inline-flex min-h-14 items-center justify-center gap-3 rounded-lg border-2 border-blue-800 bg-white px-9 py-3 text-lg font-bold text-blue-900 shadow-sm transition hover:bg-blue-50" do %>
+                      class: 'inline-flex min-h-14 items-center justify-center gap-3 rounded-lg border-2 ' \
+                             'border-blue-700 bg-white px-9 py-3 text-lg font-bold text-blue-800 shadow-sm ' \
+                             'transition hover:bg-blue-50' do %>
             <svg class="block h-6 w-6 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             ログイン
           <% end %>
@@ -42,30 +46,48 @@
       </div>
 
       <div class="relative mx-auto w-full max-w-2xl">
-        <%= image_tag "laptop-tablet.png",
-                      alt: "国試ex for PTのダッシュボードと問題演習画面",
-                      class: "relative z-10 mx-auto w-full drop-shadow-2xl" %>
+        <%= image_tag 'laptop-tablet.png',
+                      alt: '国試ex for PTのダッシュボードと問題演習画面',
+                      class: 'relative z-10 mx-auto w-full drop-shadow-2xl' %>
       </div>
     </div>
   </section>
 
   <section class="bg-white px-5 py-6 sm:px-8">
     <div class="mx-auto grid max-w-7xl gap-4 lg:grid-cols-3">
-      <% [
-        ["calendar.png", "過去10年分に対応", "国家試験の過去問をまとめて学習"],
-        ["laptop.png", "どこでも学べる", "インターネット環境があれば端末を問わず利用可能"],
-        ["analysis.png", "学習データで効率化", "採点の手間を省き、受験データをもとに復習"]
-      ].each do |image, title, description| %>
-        <div class="flex items-center gap-5 rounded-xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
-          <div class="grid h-24 w-24 shrink-0 place-items-center rounded-full bg-blue-50">
-            <%= image_tag image, class: "h-14 w-14 object-contain" %>
-          </div>
-          <div>
-            <h2 class="text-xl font-black leading-7 text-blue-950"><%= title %></h2>
-            <p class="mt-2 text-base font-medium leading-7 text-slate-700"><%= description %></p>
-          </div>
+      <div class="flex items-center gap-5 rounded-xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
+        <div class="grid h-24 w-24 shrink-0 place-items-center rounded-full bg-blue-50">
+          <%= image_tag 'calendar.png', class: 'h-14 w-14 object-contain' %>
         </div>
-      <% end %>
+        <div>
+          <h2 class="text-xl font-black leading-7 text-blue-950">過去10年分に対応</h2>
+          <p class="mt-2 text-base font-medium leading-7 text-slate-700">国家試験の過去問をまとめて学習</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-5 rounded-xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
+        <div class="grid h-24 w-24 shrink-0 place-items-center rounded-full bg-blue-50">
+          <%= image_tag 'laptop.png', class: 'h-14 w-14 object-contain' %>
+        </div>
+        <div>
+          <h2 class="text-xl font-black leading-7 text-blue-950">どこでも学べる</h2>
+          <p class="mt-2 text-base font-medium leading-7 text-slate-700">
+            インターネット環境があれば端末を問わず利用可能
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-5 rounded-xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
+        <div class="grid h-24 w-24 shrink-0 place-items-center rounded-full bg-blue-50">
+          <%= image_tag 'analysis.png', class: 'h-14 w-14 object-contain' %>
+        </div>
+        <div>
+          <h2 class="text-xl font-black leading-7 text-blue-950">学習データで効率化</h2>
+          <p class="mt-2 text-base font-medium leading-7 text-slate-700">
+            採点の手間を省き、受験データをもとに復習
+          </p>
+        </div>
+      </div>
     </div>
   </section>
 </div>
