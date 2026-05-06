@@ -1,33 +1,16 @@
-<div class="flex md:items-center lg:items-start md:flex-row md:flex-nowrap flex-wrap flex-col">
-    <div class="w-64 flex-shrink-0 md:mx-0 px-5 mx-auto text-center md:text-left">
-        <a class="flex title-font font-medium items-center md:justify-start justify-center text-gray-900 ml-3">
-            <%= image_tag 'logo.png', size: 50 %>
-            <span class="ml-3 text-xl">国試ex for PT</span>
-        </a>
+<footer class="bg-blue-900 text-blue-50">
+  <div class="mx-auto flex max-w-7xl flex-col gap-3 px-5 py-3 sm:px-8 lg:min-h-14 lg:flex-row lg:items-center lg:justify-between">
+    <div>
+      <a class="flex items-center gap-3">
+        <%= image_tag 'logo.png', class: 'h-10 w-10 shrink-0 rounded-full bg-white/90' %>
+        <span class="text-xl font-bold">国試ex for PT</span>
+      </a>
     </div>
-    <div class="flex-grow flex flex-wrap md:pl-20 -mb-10 md:mt-0 mt-10 md:text-left text-center justify-end">
-        <div class="lg:w-1/4 md:w-1/2 w-full px-4">
-            <nav class="list-none mb-10">
-                <li>
-                    <%= link_to 'トップ', root_path, class: 'mr-5 hover:text-orange-300 block' %>
-                </li>
-                <li>
-                    <%= link_to '利用規約', terms_of_use_path, class: 'mr-5 hover:text-orange-300 block' %>
-                </li>
-            </nav>
-        </div>
-        <div class="lg:w-1/4 md:w-1/2 w-full px-4">
-            <nav class="list-none mb-10">
-                <%# <li>
-                    <a class="text-gray-600 hover:text-orange-300">アプリについて</a>
-                </li> %>
-                <li>
-                    <%= link_to 'プライバシーポリシー', privacy_policy_path, class: 'mr-5 hover:text-orange-300 block' %>
-                </li>
-                <%# <li>
-                    <a class="text-gray-600 hover:text-orange-300">お問い合わせ</a>
-                </li> %>
-            </nav>
-        </div>
-    </div>
-</div>
+
+    <nav class="flex flex-wrap gap-x-6 gap-y-3 text-sm font-bold text-blue-100">
+      <%= link_to 'トップ', root_path, class: 'transition hover:text-white' %>
+      <%= link_to '利用規約', terms_of_use_path, class: 'transition hover:text-white' %>
+      <%= link_to 'プライバシーポリシー', privacy_policy_path, class: 'transition hover:text-white' %>
+    </nav>
+  </div>
+</footer>

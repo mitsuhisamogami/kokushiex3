@@ -10,12 +10,12 @@
 
   </head>
 
-  <body class="flex flex-col max-h-fit">
+  <body class="flex min-h-screen flex-col">
     <%= render 'layouts/header' %>
     <div class="flash">
       <%= render 'layouts/flash' %>
     </div>
-    <div class="flex-grow mb-10">
+    <div class="flex-1">
       <%= yield %>
     </div>
     <%= render 'layouts/footer' %>
