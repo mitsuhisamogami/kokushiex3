@@ -1,8 +1,8 @@
 # Purpose:
-# - web タスク定義を使って one-shot task を起動し、db:migrate（必要なら db:seed_fu）を実行する。
+# - web タスク定義を使って one-shot task を起動し、db:migrate（必要なら db:prepare:production）を実行する。
 # - 実行中の worker は一時的に desired=0 へ落としてリソースを確保し、終了時に元へ戻す。
 name: Run ECS Migrate Task
-description: Run db:migrate (and optional seed_fu) as one-shot ECS task
+description: Run db:migrate (and optional production db prepare) as one-shot ECS task
 
 inputs:
   cluster:
@@ -22,7 +22,7 @@ inputs:
     description: Web container name
   run-seed:
     required: false
-    description: Run seed_fu after db:migrate
+    description: Run production db prepare instead of db:migrate only
     default: "false"
 
 runs:
@@ -74,8 +74,7 @@ runs:
 
         override_command="bundle exec rails db:migrate"
         if [ "$RUN_SEED" = "true" ]; then
-          # 現在の seed-fu 管理対象は db/fixtures/development 配下のため明示指定する。
-          override_command="${override_command} && bundle exec rails db:seed_fu FIXTURE_PATH=db/fixtures/development"
+          override_command="bundle exec rails db:prepare:production"
         fi
 
         overrides="$(jq -n \
