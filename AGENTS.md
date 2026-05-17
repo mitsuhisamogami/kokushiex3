@@ -29,8 +29,15 @@
 - システムテストは Capybara を用い、Turbo で非同期挙動が必要なケースのみ `:js` タグを付けます。
 - ローカルでカバレッジを確認する場合は `COVERAGE=true` を付けて RSpec を実行し、生成される `coverage/` レポートで分岐の取りこぼしを確認します。
 
+## Codex skill 運用
+- リポジトリ固有の Codex skill は `.codex/skills/` 以下で管理します。試験 PDF から seed-fu データを作成・更新する作業では `.codex/skills/create-seed-from-pdf/SKILL.md` を参照してください。
+- `create-seed-from-pdf` は、問題 PDF のテキスト抽出、正答表の反映、別冊・図表画像の切り出し、`image_url` 設定、不要な PDF 由来スペースの正規化、確認用 HTML 生成、件数・画像・正答数の検証手順をまとめた skill です。
+- seed 作成作業では、生成物を `db/fixtures/development/*.rb` と `public/images/question_<exam><session><number>.png` に置き、確認用 HTML は `tmp/seed_review_<exam>.html` に出力します。`tmp/pdf_extract/` の抽出中間ファイルは原則コミットしません。
+- 未確認の試験回 seed や無関係な未追跡ファイルを同じコミットへ混ぜないでください。コミット前に対象ファイルを明示して `git add` します。
+
 ## コミットおよびプルリクエスト方針
 - Git 履歴に倣い、コミットの冒頭には `[add]`・`[fix]`・`[chore]` のような角括弧付きラベルと簡潔な命令形サマリを付けます。
+- コミットメッセージは日本語で記載します。
 - 機能追加とリファクタリングを同一コミットに混在させず、関連する変更を 1 セットにまとめます。Issue があれば本文で参照します。
 - プルリクエストは必ず `.github/PULL_REQUEST_TEMPLATE.md` を使用し、日本語で記載します。テンプレート中の「対応するissue」「概要」「エンドポイント」「UIの比較」「実装の詳細」「追加した Gem」「備考」を埋め、不要な表や画像は「なし」と明示します。
 - タイトルは `[修正]`・`[追加]` など日本語の角括弧ラベル + 要約で統一し、`Closes #123` の形式で関連 Issue を明記します。
