@@ -5,16 +5,16 @@
 #  id                     :bigint           not null, primary key
 #  admin                  :boolean          default(FALSE), not null
 #  confirmation_sent_at   :datetime
-#  confirmation_token     :string(255)
+#  confirmation_token     :string
 #  confirmed_at           :datetime
-#  email                  :string(255)      default(""), not null
-#  encrypted_password     :string(255)      default(""), not null
+#  email                  :string           default(""), not null
+#  encrypted_password     :string           default(""), not null
 #  guest_limit_reached_at :datetime
 #  remember_created_at    :datetime
 #  reset_password_sent_at :datetime
-#  reset_password_token   :string(255)
-#  unconfirmed_email      :string(255)
-#  username               :string(255)      not null
+#  reset_password_token   :string
+#  unconfirmed_email      :string
+#  username               :string           not null
 #  created_at             :datetime         not null
 #  updated_at             :datetime         not null
 #

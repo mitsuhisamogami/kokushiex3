@@ -11,7 +11,10 @@
 # It's strongly recommended that you check this file into your version control system.
 
 ActiveRecord::Schema[7.2].define(version: 2025_11_04_090000) do
-  create_table "choices", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "plpgsql"
+
+  create_table "choices", force: :cascade do |t|
     t.bigint "question_id", null: false
     t.string "content", null: false
     t.boolean "is_correct", default: false, null: false
@@ -21,7 +24,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_04_090000) do
     t.index ["question_id"], name: "index_choices_on_question_id"
   end
 
-  create_table "examinations", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "examinations", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "test_id", null: false
     t.datetime "attempt_date", null: false
@@ -31,7 +34,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_04_090000) do
     t.index ["user_id"], name: "index_examinations_on_user_id"
   end
 
-  create_table "pass_marks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "pass_marks", force: :cascade do |t|
     t.bigint "test_id", null: false
     t.integer "required_score", null: false
     t.integer "required_practical_score", null: false
@@ -41,7 +44,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_04_090000) do
     t.index ["test_id"], name: "index_pass_marks_on_test_id"
   end
 
-  create_table "question_tags", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "question_tags", force: :cascade do |t|
     t.bigint "question_id", null: false
     t.bigint "tag_id", null: false
     t.datetime "created_at", null: false
@@ -51,7 +54,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_04_090000) do
     t.index ["tag_id"], name: "index_question_tags_on_tag_id"
   end
 
-  create_table "questions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "questions", force: :cascade do |t|
     t.integer "question_number", null: false
     t.string "content", null: false
     t.string "image_url"
@@ -61,7 +64,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_04_090000) do
     t.index ["test_session_id"], name: "index_questions_on_test_session_id"
   end
 
-  create_table "scores", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "scores", force: :cascade do |t|
     t.bigint "examination_id", null: false
     t.integer "total_score", null: false
     t.integer "common_score", null: false
@@ -71,14 +74,14 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_04_090000) do
     t.index ["examination_id"], name: "index_scores_on_examination_id"
   end
 
-  create_table "tags", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "tags", force: :cascade do |t|
     t.string "name", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_tags_on_name", unique: true
   end
 
-  create_table "test_sessions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "test_sessions", force: :cascade do |t|
     t.bigint "test_id", null: false
     t.string "session", null: false
     t.datetime "created_at", null: false
@@ -86,13 +89,13 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_04_090000) do
     t.index ["test_id"], name: "index_test_sessions_on_test_id"
   end
 
-  create_table "tests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "tests", force: :cascade do |t|
     t.string "year", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  create_table "user_responses", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "user_responses", force: :cascade do |t|
     t.bigint "examination_id", null: false
     t.bigint "choice_id", null: false
     t.datetime "created_at", null: false
@@ -101,7 +104,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_04_090000) do
     t.index ["examination_id"], name: "index_user_responses_on_examination_id"
   end
 
-  create_table "users", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "users", force: :cascade do |t|
     t.string "username", null: false
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false

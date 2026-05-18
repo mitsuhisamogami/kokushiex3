@@ -3,7 +3,7 @@
 # Table name: test_sessions
 #
 #  id         :bigint           not null, primary key
-#  session    :string(255)      not null
+#  session    :string           not null
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
 #  test_id    :bigint           not null
