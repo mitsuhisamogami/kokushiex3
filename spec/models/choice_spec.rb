@@ -3,7 +3,7 @@
 # Table name: choices
 #
 #  id            :bigint           not null, primary key
-#  content       :string(255)      not null
+#  content       :string           not null
 #  is_correct    :boolean          default(FALSE), not null
 #  option_number :integer          not null
 #  created_at    :datetime         not null

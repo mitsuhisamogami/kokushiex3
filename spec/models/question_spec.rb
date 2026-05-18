@@ -3,8 +3,8 @@
 # Table name: questions
 #
 #  id              :bigint           not null, primary key
-#  content         :string(255)      not null
-#  image_url       :string(255)
+#  content         :string           not null
+#  image_url       :string
 #  question_number :integer          not null
 #  created_at      :datetime         not null
 #  updated_at      :datetime         not null

@@ -3,7 +3,7 @@
 # Table name: tests
 #
 #  id         :bigint           not null, primary key
-#  year       :string(255)      not null
+#  year       :string           not null
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
 #
