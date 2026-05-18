@@ -864,7 +864,7 @@ Choice.seed(:id, [
     { id: 720, question_id: 144, content: '四つ這い位保持', is_correct: false, option_number: 5 },
 
     { id: 721, question_id: 145, content: '体の痛み', is_correct: true, option_number: 1 },
-    { id: 727, question_id: 145, content: '環境因子', is_correct: false, option_number: 2 },
+    { id: 722, question_id: 145, content: '環境因子', is_correct: false, option_number: 2 },
     { id: 723, question_id: 145, content: '筋力', is_correct: false, option_number: 3 },
     { id: 724, question_id: 145, content: '睡眠の質', is_correct: false, option_number: 4 },
     { id: 725, question_id: 145, content: '認知機能', is_correct: false, option_number: 5 },
@@ -997,7 +997,7 @@ Choice.seed(:id, [
 
     { id: 831, question_id: 167, content: 'ヒスタミンは胃酸分泌を抑制する。', is_correct: false, option_number: 1 },
     { id: 832, question_id: 167, content: '迷走神経刺激は胃酸分泌を促進する。', is_correct: true, option_number: 2 },
-    { id: 838, question_id: 167, content: 'ガストリンは蛋白質の消化酵素である。', is_correct: false, option_number: 3 },
+    { id: 833, question_id: 167, content: 'ガストリンは蛋白質の消化酵素である。', is_correct: false, option_number: 3 },
     { id: 834, question_id: 167, content: '内因子はビタミンB12の吸収に関与する。', is_correct: true, option_number: 4 },
     { id: 835, question_id: 167, content: 'ペプシノーゲンは壁細胞から分泌される。', is_correct: false, option_number: 5 },
 
