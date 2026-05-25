@@ -32,13 +32,15 @@ class Examination < ApplicationRecord
 
   def self.create_result!(user_id:, test_id:, attempt_date:, choice_ids:)
     examination = Examination.create!(user_id:, test_id:, attempt_date:)
-    # 回答の保存
-    unless UserResponse.bulk_create_responses(examination, choice_ids)
+
+    # 未回答で終了した場合も0回答として採点するため、UserResponseは作成しない
+    if choice_ids.present? && !UserResponse.bulk_create_responses(examination, choice_ids)
       raise InvalidChoiceError, 'Invalid choice IDs provided'
     end
 
     # スコア計算
     Score::ScoreCalculator.new(examination).call
+    examination
   end
 
   private

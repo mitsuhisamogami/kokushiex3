@@ -2,7 +2,7 @@ class ExaminationsController < ApplicationController
   before_action :authenticate_user!
 
   def show
-    @examination = current_user.examinations.find(params[:id])
+    @examination = current_user.examinations.includes(user_responses: :choice).find(params[:id])
     authorize @examination
     @score = @examination.score
     @test = @examination.test

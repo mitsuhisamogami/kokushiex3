@@ -23,7 +23,9 @@ require 'rails_helper'
 RSpec.describe UserResponse do
   describe '#bulk_create_responses' do
     let(:examination) { create(:examination) }
-    let(:choice_ids) { create_list(:choice, 3).map(&:id) }
+    let(:test_session) { create(:test_session, test: examination.test) }
+    let(:question) { create(:question, test_session:) }
+    let(:choice_ids) { create_list(:choice, 3, question:).map(&:id) }
 
     before do
       allow(Rails.logger).to receive(:error)
@@ -63,7 +65,21 @@ RSpec.describe UserResponse do
         missing_ids = [invalid_choice_id]
 
         described_class.bulk_create_responses(examination, choice_ids_with_invalid)
-        expect(Rails.logger).to have_received(:error).with("Missing Choice IDs: #{missing_ids.join(', ')}").once
+        expect(Rails.logger).to have_received(:error)
+          .with("Invalid Choice IDs for test #{examination.test_id}: #{missing_ids.join(', ')}").once
+      end
+    end
+
+    context '別試験のchoice_idが含まれる場合' do
+      it 'user_responseは作成されずログに出力される' do
+        other_test = create(:test)
+        other_test_session = create(:test_session, test: other_test)
+        other_question = create(:question, test_session: other_test_session)
+        other_choice = create(:choice, question: other_question)
+
+        expect(described_class.bulk_create_responses(examination, [other_choice.id])).to be false
+        expect(Rails.logger).to have_received(:error)
+          .with("Invalid Choice IDs for test #{examination.test_id}: #{other_choice.id}").once
       end
     end
 
