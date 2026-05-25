@@ -36,10 +36,9 @@ class UserResponse < ApplicationRecord
       return false
     end
 
-    choices = Choice.where(id: sanitized_ids)
-    if choices.size != sanitized_ids.size
-      missing_ids = sanitized_ids - choices.pluck(:id)
-      Rails.logger.error "Missing Choice IDs: #{missing_ids.join(', ')}"
+    valid_choice_ids = choice_ids_for_examination(examination, sanitized_ids)
+    if valid_choice_ids.size != sanitized_ids.size
+      log_invalid_choice_ids(examination, sanitized_ids - valid_choice_ids)
       return false
     end
 
@@ -86,5 +85,17 @@ class UserResponse < ApplicationRecord
                            .keys
     raise ArgumentError, "Duplicate Choice IDs detected: #{duplicates.join(', ')}" if duplicates.present?
   end
-  private_class_method :sanitize_choice_ids, :normalize_choice_ids, :ensure_no_duplicates!
+
+  def self.choice_ids_for_examination(examination, choice_ids)
+    # 直接POSTで別試験のchoice_idを混ぜられないよう、受験対象testに属する選択肢だけを許可する
+    Choice.joins(question: :test_session)
+          .where(id: choice_ids, test_sessions: { test_id: examination.test_id })
+          .pluck(:id)
+  end
+
+  def self.log_invalid_choice_ids(examination, choice_ids)
+    Rails.logger.error "Invalid Choice IDs for test #{examination.test_id}: #{choice_ids.join(', ')}"
+  end
+  private_class_method :sanitize_choice_ids, :normalize_choice_ids, :ensure_no_duplicates!,
+                       :choice_ids_for_examination, :log_invalid_choice_ids
 end

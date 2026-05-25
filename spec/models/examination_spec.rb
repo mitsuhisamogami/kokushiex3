@@ -44,5 +44,21 @@ RSpec.describe Examination do
       expect(UserResponse).to have_received(:bulk_create_responses).with(instance_of(described_class), choice_ids)
       expect(score_calculator_mock).to have_received(:call)
     end
+
+    it '作成したExaminationを返す' do
+      result = described_class.create_result!(**params)
+      expect(result).to be_a(described_class)
+      expect(result).to be_persisted
+    end
+
+    context 'choice_idsが空の場合' do
+      let(:choice_ids) { [] }
+
+      it 'UserResponseを作成せず、0回答としてScoreの処理を呼び出す' do
+        expect { described_class.create_result!(**params) }.to change(described_class, :count).by(1)
+        expect(UserResponse).not_to have_received(:bulk_create_responses)
+        expect(score_calculator_mock).to have_received(:call)
+      end
+    end
   end
 end

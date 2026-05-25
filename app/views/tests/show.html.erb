@@ -1,5 +1,5 @@
-<%= form_with url: user_responses_path, method: :post do |f| %>
-  <%= hidden_field_tag :test_id, @test.id %>
+<%= form_with url: user_responses_path, method: :post, scope: :user_response do |f| %>
+  <%= f.hidden_field :test_id, value: @test.id %>
   <%= render 'question', question: @question %>
   <div class="text-center justify-center">
     <%= f.submit 'テストを終了する',
