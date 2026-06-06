@@ -3,12 +3,15 @@ ja:
     identity_authenticator:
       already_connected: 外部アカウントはすでに連携済みです。
       already_connected_provider: このサービスの外部アカウントはすでに連携済みです。
+      ambiguous_email: 同じメールアドレスのアカウントを特定できないためログインできません。
       connected: 外部アカウントを連携しました。
       connected_to_another_user: この外部アカウントは別のユーザーに連携済みです。
       failure: 外部アカウントによる認証に失敗しました。
       guest_user_not_allowed: ゲストユーザーは外部アカウントを連携できません。
       invalid_auth: 外部アカウントの認証情報を確認できませんでした。
       signed_in: 外部アカウントでログインしました。
+      signed_up: 外部アカウントで登録しました。
+      signup_failed: 外部アカウントによる登録に失敗しました。
       unverified_email: メールアドレスを確認できないためログインできません。
   activerecord:
     attributes:

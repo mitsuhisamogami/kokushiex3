@@ -35,6 +35,11 @@
 - seed 作成作業では、生成物を `db/fixtures/development/*.rb` と `public/images/question_<exam><session><number>.png` に置き、確認用 HTML は `tmp/seed_review_<exam>.html` に出力します。`tmp/pdf_extract/` の抽出中間ファイルは原則コミットしません。
 - 未確認の試験回 seed や無関係な未追跡ファイルを同じコミットへ混ぜないでください。コミット前に対象ファイルを明示して `git add` します。
 
+## サブエージェント運用
+- 実装やレビューでサブエージェントを使う場合は `.agents/` 以下の定義を参照します。`planner` は実装前の方針整理、`implementer` は範囲を限定した実装、`code-reader` は既存コード調査を担当します。
+- `reviewer` はレビュー全体の入口とし、必要に応じて `reviewer/design`、`reviewer/test`、`reviewer/security`、`reviewer/performance` の観点別に分けて確認します。
+- サブエージェントへ渡すタスクでは、対象ファイル、期待する出力、編集可否、検証コマンドを明示し、観点が重複しないように分担します。
+
 ## コミットおよびプルリクエスト方針
 - Git 履歴に倣い、コミットの冒頭には `[add]`・`[fix]`・`[chore]` のような角括弧付きラベルと簡潔な命令形サマリを付けます。
 - コミットメッセージは日本語で記載します。

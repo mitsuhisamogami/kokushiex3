@@ -19,6 +19,32 @@ RSpec.describe 'Users::passwords' do
         expect(response).to redirect_to('/users/sign_in')
       end.to change { user.reload.reset_password_sent_at }.from(nil)
     end
+
+    context 'OAuth作成相当のランダムパスワードユーザーの場合' do
+      let(:auth) do
+        OmniAuth::AuthHash.new(
+          provider: 'developer',
+          uid: 'uid-123',
+          info: {
+            email: 'oauth-created@example.com',
+            name: 'OAuth User',
+            email_verified: true
+          }
+        )
+      end
+      let(:user) { create_oauth_user }
+
+      it 'パスワードリセットメール送信を開始できる' do
+        expect do
+          post('/users/password', params:)
+          expect(response).to redirect_to('/users/sign_in')
+        end.to change { user.reload.reset_password_sent_at }.from(nil)
+      end
+
+      def create_oauth_user
+        Oauth::IdentityAuthenticator.new(auth:, current_user: nil).call.user
+      end
+    end
   end
 
   describe 'GET /users/password/edit' do

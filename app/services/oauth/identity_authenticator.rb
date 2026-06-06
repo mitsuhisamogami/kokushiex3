@@ -5,9 +5,10 @@ module Oauth
         status == :success
       end
     end
+    delegate :provider, :uid, :email, :name, :image_url, :verified_email?, to: :auth_reader
 
     def initialize(auth:, current_user:)
-      @auth = auth
+      @auth_reader = AuthHashReader.new(auth)
       @current_user = current_user
     end
 
@@ -19,20 +20,33 @@ module Oauth
 
       authenticate_new_identity
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
-      failure(:already_connected_provider)
+      recover_from_persistence_error
     end
 
     private
 
-    attr_reader :auth, :current_user
+    attr_reader :auth_reader, :current_user
 
     def authenticate_new_identity
       # ゲストのOAuth連携・本登録化は別フローで扱うため、この共通基盤では拒否する。
       return failure(:guest_user_not_allowed) if current_user&.guest?
       return connect_identity(current_user, :connected) if current_user
 
-      user = find_verified_email_user
-      return failure(:unverified_email) unless user
+      authenticate_unregistered_user
+    end
+
+    def authenticate_unregistered_user
+      return failure(:unverified_email) unless email.present? && verified_email?
+
+      user = find_user_by_email
+      return failure(:ambiguous_email) if user == :ambiguous
+      return authenticate_verified_email_user(user) if user
+
+      create_user_with_identity
+    end
+
+    def authenticate_verified_email_user(user)
+      return failure(:guest_user_not_allowed) if user.guest?
 
       connect_identity(user, :signed_in)
     end
@@ -60,64 +74,42 @@ module Oauth
       success(user, identity, message_key)
     end
 
-    def find_verified_email_user
-      return unless email.present? && verified_email?
+    def create_user_with_identity
+      user, identity = UserCreator.new(provider:, uid:, email:, name:, image_url:).call
 
-      user = User.find_by('LOWER(email) = ?', email.downcase)
-      return if user&.guest?
-
-      user
+      success(user, identity, :signed_up)
     end
 
-    def provider
-      auth_value(:provider).to_s
+    def find_user_by_email
+      users = User.where('LOWER(email) = ?', email).limit(2).to_a
+      return :ambiguous if users.many?
+
+      users.first
     end
 
-    def uid
-      auth_value(:uid).to_s
+    def recover_from_persistence_error
+      identity = UserIdentity.find_by(provider:, uid:)
+      return authenticate_existing_identity(identity) if identity
+
+      return failure(:already_connected_provider) if current_user
+      return failure(:signup_failed) unless email.present? && verified_email?
+
+      user = find_user_by_email
+      return failure(:ambiguous_email) if user == :ambiguous
+      return connect_identity_with_recovery(user, :signed_in) if user
+
+      failure(:signup_failed)
     end
 
-    def email
-      @email ||= info_value(:email).to_s.downcase.presence
-    end
+    def connect_identity_with_recovery(user, message_key)
+      return failure(:guest_user_not_allowed) if user.guest?
 
-    def name
-      @name ||= info_value(:name).presence
-    end
+      connect_identity(user, message_key)
+    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
+      identity = UserIdentity.find_by(provider:, uid:)
+      return authenticate_existing_identity(identity) if identity
 
-    def image_url
-      @image_url ||= info_value(:image).presence || info_value(:image_url).presence
-    end
-
-    def verified_email?
-      # provider固有のverifiedはemail検証以外を指すことがあるため、email検証キーだけを見る。
-      [
-        info_value(:email_verified),
-        raw_info_value(:email_verified),
-        raw_info_value(:verified_email)
-      ].any? { |value| truthy?(value) }
-    end
-
-    def auth_value(key)
-      fetch_value(auth, key)
-    end
-
-    def info_value(key)
-      fetch_value(auth_value(:info), key)
-    end
-
-    def raw_info_value(key)
-      fetch_value(fetch_value(auth_value(:extra), :raw_info), key)
-    end
-
-    def fetch_value(object, key)
-      return if object.blank?
-
-      object.respond_to?(key) ? object.public_send(key) : object[key]
-    end
-
-    def truthy?(value)
-      value == true || value.to_s == 'true'
+      failure(:signup_failed)
     end
 
     def success(user, identity, message_key)
