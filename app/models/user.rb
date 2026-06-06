@@ -32,10 +32,12 @@ class User < ApplicationRecord
   GUEST_RETENTION_PERIOD = 7.days
 
   has_many :examinations, dependent: :destroy
+  has_many :user_identities, dependent: :destroy
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :validatable
+         :recoverable, :rememberable, :validatable,
+         :omniauthable, omniauth_providers: (Rails.env.test? ? [:developer] : [])
 
   validates :username, presence: true, length: { maximum: 50 }
   validate :admin_restrictions

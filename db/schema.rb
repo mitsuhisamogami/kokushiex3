@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_11_04_090000) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_06_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -95,6 +95,20 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_04_090000) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "user_identities", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "provider", null: false
+    t.string "uid", null: false
+    t.string "email"
+    t.string "name"
+    t.string "image_url"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider", "uid"], name: "index_user_identities_on_provider_and_uid", unique: true
+    t.index ["user_id", "provider"], name: "index_user_identities_on_user_id_and_provider", unique: true
+    t.index ["user_id"], name: "index_user_identities_on_user_id"
+  end
+
   create_table "user_responses", force: :cascade do |t|
     t.bigint "examination_id", null: false
     t.bigint "choice_id", null: false
@@ -134,6 +148,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_04_090000) do
   add_foreign_key "questions", "test_sessions"
   add_foreign_key "scores", "examinations"
   add_foreign_key "test_sessions", "tests"
+  add_foreign_key "user_identities", "users"
   add_foreign_key "user_responses", "choices"
   add_foreign_key "user_responses", "examinations"
 end

@@ -1,30 +1,33 @@
 # frozen_string_literal: true
 
 class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
-  # You should configure your model like this:
-  # devise :omniauthable, omniauth_providers: [:twitter]
+  User.omniauth_providers.each do |provider|
+    define_method(provider) do
+      handle_callback
+    end
+  end
 
-  # You should also create an action method in this controller like this:
-  # def twitter
-  # end
+  def failure
+    redirect_to failure_redirect_path, alert: t('oauth.identity_authenticator.failure')
+  end
 
-  # More info at:
-  # https://github.com/heartcombo/devise#omniauth
+  private
 
-  # GET|POST /resource/auth/twitter
-  # def passthru
-  #   super
-  # end
+  def handle_callback
+    result = Oauth::IdentityAuthenticator.new(
+      auth: request.env['omniauth.auth'],
+      current_user:
+    ).call
 
-  # GET|POST /users/auth/twitter/callback
-  # def failure
-  #   super
-  # end
+    if result.success?
+      sign_in(:user, result.user)
+      redirect_to after_sign_in_path_for(result.user), notice: result.message
+    else
+      redirect_to failure_redirect_path, alert: result.message
+    end
+  end
 
-  # protected
-
-  # The path used when OmniAuth fails
-  # def after_omniauth_failure_path_for(scope)
-  #   super(scope)
-  # end
+  def failure_redirect_path
+    user_signed_in? ? account_path : new_user_session_path
+  end
 end
