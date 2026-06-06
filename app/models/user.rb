@@ -23,7 +23,9 @@
 #  index_users_on_confirmation_token      (confirmation_token) UNIQUE
 #  index_users_on_email                   (email) UNIQUE
 #  index_users_on_guest_limit_reached_at  (guest_limit_reached_at)
+#  index_users_on_lower_email             (lower((email)::text))
 #  index_users_on_reset_password_token    (reset_password_token) UNIQUE
+#  index_users_on_username                (username)
 #
 class User < ApplicationRecord
   GUEST_EMAIL_PREFIX = 'guest_'.freeze

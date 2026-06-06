@@ -23,11 +23,22 @@
 #  index_users_on_confirmation_token      (confirmation_token) UNIQUE
 #  index_users_on_email                   (email) UNIQUE
 #  index_users_on_guest_limit_reached_at  (guest_limit_reached_at)
+#  index_users_on_lower_email             (lower((email)::text))
 #  index_users_on_reset_password_token    (reset_password_token) UNIQUE
+#  index_users_on_username                (username)
 #
 require 'rails_helper'
 
 RSpec.describe User do
+  describe 'indexes' do
+    it 'usernameのindexは重複を許可する' do
+      index = ActiveRecord::Base.connection.indexes(:users).find { |i| i.name == 'index_users_on_username' }
+
+      expect(index).to be_present
+      expect(index.unique).to be false
+    end
+  end
+
   describe '正常系' do
     it 'ユーザー登録ができる' do
       user = described_class.new(username: 'newuser', email: 'newuser@example.com', password: 'password',
