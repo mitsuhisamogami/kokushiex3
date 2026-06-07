@@ -1,14 +1,19 @@
 require 'rails_helper'
 
 RSpec.describe 'Users::omniauth_callbacks' do
-  before do
+  around do |example|
+    original_test_mode = OmniAuth.config.test_mode
+    original_developer_auth = OmniAuth.config.mock_auth[:developer]
+    original_google_auth = OmniAuth.config.mock_auth[:google_oauth2]
+
     OmniAuth.config.test_mode = true
     OmniAuth.config.mock_auth[:developer] = auth
-  end
 
-  after do
-    OmniAuth.config.mock_auth[:developer] = nil
-    OmniAuth.config.test_mode = false
+    example.run
+  ensure
+    OmniAuth.config.mock_auth[:developer] = original_developer_auth
+    OmniAuth.config.mock_auth[:google_oauth2] = original_google_auth
+    OmniAuth.config.test_mode = original_test_mode
   end
 
   let(:auth) do
@@ -19,14 +24,17 @@ RSpec.describe 'Users::omniauth_callbacks' do
     attributes = default_auth_attributes.merge(overrides)
 
     OmniAuth::AuthHash.new(provider: attributes[:provider], uid: attributes[:uid],
-                           info: attributes.slice(:email, :email_verified, :name, :image))
+                           info: attributes.slice(:email, :email_verified, :name, :image),
+                           credentials: attributes[:credentials],
+                           extra: { raw_info: attributes[:raw_info] })
   end
 
   def default_auth_attributes
     {
       provider: 'developer', uid: 'uid-123',
       email: 'user@example.com', email_verified: true,
-      name: 'OAuth User', image: 'https://example.com/avatar.png'
+      name: 'OAuth User', image: 'https://example.com/avatar.png',
+      credentials: nil, raw_info: nil
     }
   end
 
@@ -239,6 +247,112 @@ RSpec.describe 'Users::omniauth_callbacks' do
         expect(response).to redirect_to(new_user_session_path)
         expect(flash[:alert]).to eq I18n.t('oauth.identity_authenticator.unverified_email')
         expect(controller.current_user).to be_nil
+      end
+    end
+  end
+
+  describe 'GET /users/auth/google_oauth2/callback' do
+    around do |example|
+      with_google_oauth_routes(enabled: true) { example.run }
+    end
+
+    before do
+      OmniAuth.config.mock_auth[:google_oauth2] = auth
+    end
+
+    def google_callback
+      get user_google_oauth2_omniauth_callback_path, env: { 'omniauth.auth' => auth }
+    end
+
+    let(:auth) do
+      auth_hash(
+        provider: 'google_oauth2',
+        uid: 'google-uid-123',
+        email: 'google-user@example.com',
+        email_verified: nil,
+        raw_info: { email: 'google-user@example.com', email_verified: true },
+        credentials: {
+          token: 'access-token',
+          refresh_token: 'refresh-token'
+        }
+      )
+    end
+
+    it 'raw_info.email_verifiedがtrueでemailが一致する場合のみ新規ユーザーを作成してログインする' do
+      expect do
+        google_callback
+      end.to change(User, :count).by(1).and change(UserIdentity, :count).by(1)
+
+      identity = UserIdentity.find_by(provider: 'google_oauth2', uid: 'google-uid-123')
+      aggregate_failures do
+        expect(response).to redirect_to(root_path)
+        expect(controller.current_user).to eq identity.user
+        expect(identity.email).to eq 'google-user@example.com'
+      end
+    end
+
+    it 'tokenやraw_infoをUserIdentityへ保存しない' do
+      google_callback
+
+      identity = UserIdentity.find_by!(provider: 'google_oauth2', uid: 'google-uid-123')
+      aggregate_failures do
+        expect(identity.attributes).not_to include('token')
+        expect(identity.attributes).not_to include('refresh_token')
+        expect(identity.attributes).not_to include('raw_info')
+      end
+    end
+
+    context 'raw_info.email_verifiedがfalseの場合' do
+      let(:auth) do
+        auth_hash(
+          provider: 'google_oauth2',
+          uid: 'google-uid-123',
+          email: 'google-user@example.com',
+          email_verified: true,
+          raw_info: { email: 'google-user@example.com', email_verified: false }
+        )
+      end
+
+      it 'info.email_verifiedがtrueでも失敗する' do
+        expect do
+          google_callback
+        end.not_to(change { [User.count, UserIdentity.count] })
+
+        expect(response).to redirect_to(new_user_session_path)
+        expect(flash[:alert]).to eq I18n.t('oauth.identity_authenticator.unverified_email')
+      end
+    end
+
+    context 'raw_info.emailとinfo.emailが一致しない場合' do
+      let(:auth) do
+        auth_hash(
+          provider: 'google_oauth2',
+          uid: 'google-uid-123',
+          email: 'google-user@example.com',
+          raw_info: { email: 'other@example.com', email_verified: true }
+        )
+      end
+
+      it '失敗する' do
+        expect do
+          google_callback
+        end.not_to(change { [User.count, UserIdentity.count] })
+
+        expect(response).to redirect_to(new_user_session_path)
+        expect(flash[:alert]).to eq I18n.t('oauth.identity_authenticator.unverified_email')
+      end
+    end
+
+    context 'callback providerとauth.providerが一致しない場合' do
+      let(:auth) { auth_hash(provider: 'developer', uid: 'developer-uid') }
+
+      it 'identityを作成せず失敗する' do
+        expect do
+          google_callback
+        end.not_to(change { [User.count, UserIdentity.count] })
+
+        expect(response).to redirect_to(new_user_session_path)
+        expect(flash[:alert]).to eq I18n.t('oauth.identity_authenticator.failure')
       end
     end
   end

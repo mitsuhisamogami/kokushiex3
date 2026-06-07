@@ -69,12 +69,57 @@ docker-compose exec web bin/dev
 
 ### 管理者ユーザー（開発環境）
 
-シードデータで作成される管理者アカウント：
+シードデータで作成される開発環境専用の管理者アカウント：
 
 ```
 Email: admin@example.com
 Password: admin123
 ```
+
+このアカウントは `db:prepare:development` で投入される開発用 seed です。本番環境には投入しないでください。
+
+## Google OAuth ログイン
+
+Google ログインをローカルまたは本番で有効にするには、Google Cloud Console で OAuth クライアントを作成します。
+
+1. OAuth consent screen を設定する
+   - アプリ名
+   - サポートメール
+   - プライバシーポリシー: `https://app.kokushiex.com/privacy_policy`
+   - 利用規約: `https://app.kokushiex.com/terms_of_use`
+2. Web application の OAuth クライアントを作成する
+3. 承認済みリダイレクト URI を登録する
+   - `http://localhost:3000/users/auth/google_oauth2/callback`
+   - `https://app.kokushiex.com/users/auth/google_oauth2/callback`
+
+Rails credentials には以下の形式で設定します。実値はコミットしないでください。
+
+```yaml
+google_oauth:
+  client_id: your-google-client-id
+  client_secret: your-google-client-secret
+```
+
+環境変数で設定する場合は、以下を使います。
+
+```bash
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+```
+
+credentials が空の場合のみ環境変数へ fallback します。client id と client secret の両方が設定されている場合だけ Google ログインが有効になります。scope は `email, profile` のみで、追加の Google API 権限は使用しません。
+
+credentials または環境変数を変更した場合は Rails を再起動してください。
+
+ローカルでの確認手順:
+
+```bash
+docker-compose up -d
+docker-compose exec web rails db:prepare:development
+docker-compose exec web bin/dev
+```
+
+`http://localhost:3000/users/sign_in` を開き、`admin@example.com` / `admin123` で通常ログインできることを確認します。Google credentials 未設定時は Google ボタンが表示されず、設定後に Rails を再起動すると `Googleでログイン` が表示されます。
 
 ## テスト
 

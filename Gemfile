@@ -48,6 +48,7 @@ gem 'bootsnap', require: false
 gem 'devise', '>= 5.0.4'
 gem 'devise-i18n'
 gem 'omniauth'
+gem 'omniauth-google-oauth2'
 gem 'omniauth-rails_csrf_protection'
 
 # 認可

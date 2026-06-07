@@ -1,5 +1,4 @@
 <div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
-
   <%= form_with(model: resource, as: resource_name, url: user_session_path,
                 method: :post, local: true, html: { class: 'mt-8 space-y-6 sm:mx-auto sm:w-full sm:max-w-md' }) do |f| %>
     <%= render 'devise/shared/error_messages', resource: %>
@@ -39,4 +38,6 @@
       パスワードを忘れた場合は<%= link_to 'こちら', new_password_path(resource_name), class: 'text-sky-500 hover:text-orange-300' %>
     </p>
   </div>
+
+  <%= render 'users/shared/oauth_buttons', mode: :sign_in %>
 </div>

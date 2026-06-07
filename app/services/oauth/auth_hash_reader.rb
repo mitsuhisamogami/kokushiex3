@@ -25,6 +25,7 @@ module Oauth
     end
 
     def verified_email?
+      return google_verified_email? if provider == 'google_oauth2'
       return true if truthy?(info_value(:email_verified))
       return false unless raw_info_email_matches?
 
@@ -52,6 +53,10 @@ module Oauth
 
     def raw_info_email_matches?
       raw_info_value(:email).to_s.strip.downcase.presence == email
+    end
+
+    def google_verified_email?
+      raw_info_email_matches? && raw_info_value(:email_verified) == true
     end
 
     def fetch_value(object, key)

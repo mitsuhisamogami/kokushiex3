@@ -30,6 +30,52 @@
 require 'rails_helper'
 
 RSpec.describe User do
+  describe '.omniauth_providers' do
+    it 'test環境ではdeveloper providerを維持する' do
+      allow(Oauth::ProviderConfig).to receive(:enabled_providers).and_return([])
+
+      expect(described_class.omniauth_providers).to eq [:developer]
+    end
+
+    it 'Googleが有効な場合はgoogle_oauth2を含める' do
+      allow(Oauth::ProviderConfig).to receive(:enabled_providers).and_return([:google_oauth2])
+
+      expect(described_class.omniauth_providers).to contain_exactly(:developer, :google_oauth2)
+    end
+
+    it 'Googleが無効な場合はgoogle_oauth2を含めない' do
+      allow(Oauth::ProviderConfig).to receive(:enabled_providers).and_return([])
+
+      expect(described_class.omniauth_providers).not_to include(:google_oauth2)
+    end
+  end
+
+  describe 'Devise OmniAuth provider設定' do
+    let(:devise_initializer) { Rails.root.join('config/initializers/devise.rb') }
+
+    it 'Googleが有効な場合はDeviseにもgoogle_oauth2を登録する' do
+      with_restored_devise_omniauth_configs do
+        with_google_oauth_credentials do
+          Devise.omniauth_configs.clear
+          load devise_initializer
+
+          expect(Devise.omniauth_configs.keys).to include(:google_oauth2)
+        end
+      end
+    end
+
+    it 'Googleが無効な場合はDeviseにgoogle_oauth2を登録しない' do
+      with_restored_devise_omniauth_configs do
+        with_google_oauth_credentials(client_id: nil, client_secret: nil) do
+          Devise.omniauth_configs.clear
+          load devise_initializer
+
+          expect(Devise.omniauth_configs.keys).not_to include(:google_oauth2)
+        end
+      end
+    end
+  end
+
   describe 'indexes' do
     it 'usernameのindexは重複を許可する' do
       index = ActiveRecord::Base.connection.indexes(:users).find { |i| i.name == 'index_users_on_username' }

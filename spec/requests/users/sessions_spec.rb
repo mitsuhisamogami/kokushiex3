@@ -16,6 +16,10 @@ RSpec.describe 'Users::sessions' do
       .find { |header| header.start_with?("#{name}=") }
   end
 
+  def parsed_response
+    Nokogiri::HTML(response.body)
+  end
+
   describe 'POST /users/sign_in' do
     let(:user) do
       User.create(username: 'testuser', email: 'testuser@example.com', password: 'password',
@@ -75,6 +79,58 @@ RSpec.describe 'Users::sessions' do
         post user_session_path, params: invalid_login_params
         expect(response).to render_template(:new)
         expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
+  end
+
+  describe 'seed管理者相当の通常ログイン' do
+    let(:seed_admin_password) { 'admin123' }
+    let!(:seed_admin) do
+      create(:user, :admin, email: 'admin@example.com', password: seed_admin_password,
+                            password_confirmation: seed_admin_password)
+    end
+
+    before do
+      Rack::Attack.cache.store.clear
+    end
+
+    it 'Googleが無効でもメールアドレスとパスワードでログインできる' do
+      with_google_oauth_routes(enabled: false) do
+        get new_user_session_path
+
+        aggregate_failures do
+          expect(response.body).to include('name="user[email]"')
+          expect(response.body).to include('name="user[password]"')
+          expect(response.body).to include('value="ログイン"')
+          expect(response.body).not_to include('Googleでログイン')
+        end
+
+        post user_session_path, params: { user: { email: seed_admin.email, password: seed_admin_password } }
+        expect(response).to redirect_to(dashboard_path)
+      end
+    end
+
+    it 'Googleが有効でOAuthボタンが表示されても通常ログインできる' do
+      with_google_oauth_routes(enabled: true) do
+        get new_user_session_path
+        google_form = parsed_response.at_css(
+          'form[action="/users/auth/google_oauth2"][method="post"][data-turbo="false"]'
+        )
+
+        aggregate_failures do
+          expect(response.body).to include('Googleでログイン')
+          expect(google_form).to be_present
+          expect(google_form.at_css('svg')).to be_present
+          expect(response.body.index('action="/users/sign_in"'))
+            .to be < response.body.index('action="/users/auth/google_oauth2"')
+          expect(response.body).to include('name="user[email]"')
+          expect(response.body).to include('name="user[password]"')
+          expect(response.body).to include('value="ログイン"')
+          expect(response.body).not_to include('href="/users/auth/google_oauth2"')
+        end
+
+        post user_session_path, params: { user: { email: seed_admin.email, password: seed_admin_password } }
+        expect(response).to redirect_to(dashboard_path)
       end
     end
   end
