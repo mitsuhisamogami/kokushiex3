@@ -8,6 +8,8 @@
 #
 # Use this hook to configure devise mailer, warden hooks and so forth.
 # Many of these configuration options can be set straight in your model.
+require Rails.root.join('app/services/oauth/provider_config')
+
 Devise.setup do |config|
   # The secret key used by Devise. Devise uses this key to generate
   # random tokens. Changing this key will render invalid all existing
@@ -276,6 +278,12 @@ Devise.setup do |config|
   # Add a new OmniAuth provider. Check the wiki for more information on setting
   # up on your models and hooks.
   # config.omniauth :github, 'APP_ID', 'APP_SECRET', scope: 'user,public_repo'
+  if Oauth::ProviderConfig.google_enabled?
+    config.omniauth :google_oauth2,
+                    Oauth::ProviderConfig.google_client_id,
+                    Oauth::ProviderConfig.google_client_secret,
+                    scope: 'email,profile'
+  end
 
   # ==> Warden configuration
   # If you want to use other strategies, that are not supported by Devise, or

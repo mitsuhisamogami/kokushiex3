@@ -35,11 +35,22 @@ class User < ApplicationRecord
 
   has_many :examinations, dependent: :destroy
   has_many :user_identities, dependent: :destroy
+
+  def self.omniauth_provider_names
+    providers = []
+    providers << :developer if Rails.env.test?
+    providers.concat(Oauth::ProviderConfig.enabled_providers)
+  end
+
+  def self.omniauth_providers
+    omniauth_provider_names
+  end
+
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable,
-         :omniauthable, omniauth_providers: (Rails.env.test? ? [:developer] : [])
+         :omniauthable, omniauth_providers: omniauth_provider_names
 
   validates :username, presence: true, length: { maximum: 50 }
   validate :admin_restrictions
