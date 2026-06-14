@@ -1,0 +1,29 @@
+<nav class='mt-5 flex items-center justify-center gap-2' aria-label='受験履歴ページネーション'>
+    <% if current_page > 1 %>
+        <%= link_to '前へ',
+                    dashboard_path(page: current_page - 1),
+                    class: 'rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-bold text-gray-700
+                            hover:bg-blue-50' %>
+    <% end %>
+
+    <% 1.upto(total_pages) do |page| %>
+        <% if page == current_page %>
+            <span class='rounded-lg border border-blue-700 bg-blue-700 px-3 py-2 text-sm font-bold text-white'
+                  aria-current='page'>
+                <%= page %>
+            </span>
+        <% else %>
+            <%= link_to page,
+                        dashboard_path(page:),
+                        class: 'rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-bold text-gray-700
+                                hover:bg-blue-50' %>
+        <% end %>
+    <% end %>
+
+    <% if current_page < total_pages %>
+        <%= link_to '次へ',
+                    dashboard_path(page: current_page + 1),
+                    class: 'rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-bold text-gray-700
+                            hover:bg-blue-50' %>
+    <% end %>
+</nav>

@@ -1,0 +1,50 @@
+<div class='w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg' data-testid='examination-history'>
+    <div class='m-5'>
+        <h2 class='font-bold text-lg'>受験履歴</h2>
+
+        <div class='mt-4 overflow-x-auto'>
+            <table class='w-full min-w-[760px] table-auto border-collapse text-center text-sm'>
+                <thead>
+                <tr>
+                    <th class='border border-blue-100 bg-blue-50 px-4 py-3 text-gray-600'>受験日</th>
+                    <th class='border border-blue-100 bg-blue-50 px-4 py-3 text-gray-600'>試験回</th>
+                    <th class='border border-blue-100 bg-blue-50 px-4 py-3 text-gray-600'>共通</th>
+                    <th class='border border-blue-100 bg-blue-50 px-4 py-3 text-gray-600'>実地</th>
+                    <th class='border border-blue-100 bg-blue-50 px-4 py-3 text-gray-600'>総得点</th>
+                    <th class='border border-blue-100 bg-blue-50 px-4 py-3 text-gray-600'>合格基準</th>
+                    <th class='border border-blue-100 bg-blue-50 px-4 py-3 text-gray-600'>レポート</th>
+                </tr>
+                </thead>
+                <tbody>
+                <% examinations.each do |examination| %>
+                    <tr>
+                        <td class='border border-gray-200 px-4 py-3 text-gray-600'>
+                            <%= examination.attempt_date.strftime('%Y年%m月%d日') %>
+                        </td>
+                        <td class='border border-gray-200 px-4 py-3 font-bold text-gray-700'>
+                            <%= examination.test.decorate.implementation_year %>
+                        </td>
+                        <td class='border border-gray-200 px-4 py-3 font-bold text-blue-700'>
+                            <%= examination.score.common_score %>
+                        </td>
+                        <td class='border border-gray-200 px-4 py-3 font-bold text-blue-700'>
+                            <%= examination.score.practical_score %>
+                        </td>
+                        <td class='border border-gray-200 px-4 py-3 font-bold text-blue-700'>
+                            <%= examination.score.total_score %>
+                        </td>
+                        <td class='border border-gray-200 px-4 py-3 font-bold text-emerald-600'>
+                            <%= examination.test.pass_mark.required_score %>
+                        </td>
+                        <td class='border border-gray-200 px-4 py-3'>
+                            <%= link_to '確認する',
+                                        examination_path(examination),
+                                        class: 'font-bold text-sky-600 hover:text-sky-800' %>
+                        </td>
+                    </tr>
+                <% end %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
