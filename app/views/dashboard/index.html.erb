@@ -1,57 +1,16 @@
 <div class='flex flex-wrap body-font'>
-    <div class='w-full max-w-4xl m-auto'>
-        <!-- 前回のレポートセクション -->
-        <div class='flex mb-10'>
-            <div class='w-full h-full border-2 border-gray-200 border-opacity-60 rounded-lg overflow-hidden shadow-xl'>
-                <div class='m-5'>
-                    <h2 class='font-bold text-xl'>前回のスコア</h2>
-                    <div class='text-center my-2 text-4xl text-sky-500'>
-                        <% if @latest_examination&.test %>
-                            <%= @latest_examination.test.decorate.implementation_year %>
-                        <% else %>
-                            -
-                        <% end %>
-                    </div>
-                    <div class='flex justify-center py-2'>
-                        <div class='flex flex-col text-center border-r-4 border-gray-200'>
-                            <h3 class='text-3xl text-gray-500 mx-8'>共通</h3>
-                            <div class='text-3xl text-sky-500'><%= @latest_score&.common_score || '-' %></div>
-                        </div>
-                        <div class='flex flex-col text-center border-r-4 border-gray-200'>
-                            <h3 class='text-3xl text-gray-500 mx-8'>実地</h3>
-                            <div class='text-3xl text-sky-500'><%= @latest_score&.practical_score || '-' %></div>
-                        </div>
-                        <div class='flex flex-col text-center border-r-4 border-gray-200'>
-                            <h3 class='text-3xl text-gray-500 mx-8'>総得点</h3>
-                            <div class='text-3xl text-sky-500'><%= @latest_score&.total_score || '-' %></div>
-                        </div>
-                        <div class='flex flex-col text-center'>
-                            <h3 class='text-3xl text-gray-500 mx-8'>合格点</h3>
-                            <div class='text-3xl text-sky-500'>
-                                <% if @latest_examination&.test&.pass_mark %>
-                                    <%= @latest_examination.test.pass_mark.total_score %>
-                                <% else %>
-                                    -
-                                <% end %>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="text-center m-2">
-                    <% if @latest_examination.present? %>
-                        <%= link_to examination_path(@latest_examination),
-                                    class: 'inline-flex items-center bg-sky-100 text-gray-700
-                                            hover:bg-sky-500 hover:text-orange-300 font-bold
-                                            py-2 px-4 rounded-lg shadow-xl' do %>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607ZM10.5 7.5v6m3-3h-6" />
-                            </svg>
-                            レポートを確認する
-                        <% end %>
-                    <% end %>
-                </div>
-            </div>
+    <div class='w-full max-w-5xl m-auto px-4'>
+        <div class='mb-10 mt-5'>
+            <% if @latest_examination.present? %>
+                <%= render 'latest_score', examination: @latest_examination %>
+                <%= render 'examination_history',
+                           examinations: @examinations,
+                           score_trend_data: @score_trend_data,
+                           current_page: @history_page,
+                           total_pages: @total_history_pages %>
+            <% else %>
+                <%= render 'empty_state' %>
+            <% end %>
         </div>
 
         <!-- 学習進捗セクション -->
