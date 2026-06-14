@@ -160,6 +160,42 @@ RSpec.describe Oauth::IdentityAuthenticator do
         end
       end
 
+      context 'LINEでemailはあるがverified claimがない場合' do
+        let!(:user) { create(:user, email: 'user@example.com') }
+        let(:auth) do
+          auth_hash(
+            provider: 'line',
+            uid: 'line-uid-123',
+            email_verified: nil,
+            raw_info: { email: 'user@example.com' }
+          )
+        end
+
+        it 'emailが一致しても自動連携も新規作成もしない' do
+          expect { result }.not_to change(UserIdentity, :count)
+          expect(result).not_to be_success
+          expect(user.reload.user_identities).to be_empty
+        end
+      end
+
+      context 'LINEでverified emailを確認できる場合' do
+        let!(:user) { create(:user, email: 'user@example.com') }
+        let(:auth) do
+          auth_hash(
+            provider: 'line',
+            uid: 'line-uid-123',
+            email_verified: nil,
+            raw_info: { email: 'user@example.com', email_verified: true }
+          )
+        end
+
+        it '既存ユーザーへ自動連携する' do
+          expect { result }.to change(user.user_identities, :count).by(1)
+          expect(result).to be_success
+          expect(result.identity.provider).to eq 'line'
+        end
+      end
+
       context 'email_verifiedがnilの場合' do
         let(:auth) { auth_hash(email_verified: nil) }
 

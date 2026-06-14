@@ -285,6 +285,13 @@ Devise.setup do |config|
                     scope: 'email,profile'
   end
 
+  if Oauth::ProviderConfig.line_enabled?
+    config.omniauth :line,
+                    Oauth::ProviderConfig.line_client_id,
+                    Oauth::ProviderConfig.line_client_secret,
+                    scope: 'profile openid email'
+  end
+
   # ==> Warden configuration
   # If you want to use other strategies, that are not supported by Devise, or
   # change the failure app, you can configure them inside the config.warden block.

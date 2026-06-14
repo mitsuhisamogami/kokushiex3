@@ -259,6 +259,9 @@ GEM
       oauth2 (~> 2.0)
       omniauth (~> 2.0)
       omniauth-oauth2 (~> 1.8)
+    omniauth-line-v2 (2.0.0)
+      omniauth (~> 2.0)
+      omniauth-oauth2 (~> 1.8)
     omniauth-oauth2 (1.9.0)
       oauth2 (>= 2.0.2, < 3)
       omniauth (~> 2.0)
@@ -491,6 +494,7 @@ DEPENDENCIES
   letter_opener_web
   omniauth
   omniauth-google-oauth2
+  omniauth-line-v2
   omniauth-rails_csrf_protection
   pg
   puma

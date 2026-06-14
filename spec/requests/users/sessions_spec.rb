@@ -103,6 +103,7 @@ RSpec.describe 'Users::sessions' do
           expect(response.body).to include('name="user[password]"')
           expect(response.body).to include('value="ログイン"')
           expect(response.body).not_to include('Googleでログイン')
+          expect(response.body).not_to include('LINEでログイン')
         end
 
         post user_session_path, params: { user: { email: seed_admin.email, password: seed_admin_password } }
@@ -121,6 +122,10 @@ RSpec.describe 'Users::sessions' do
           expect(response.body).to include('Googleでログイン')
           expect(google_form).to be_present
           expect(google_form.at_css('svg')).to be_present
+          expect(google_form.at_css('button[disabled]')).to be_present
+          expect(response.body).to include('外部アカウントでのログインでは、連携先に登録されているメールアドレスを取得し')
+          expect(response.body).to include(terms_of_use_path)
+          expect(response.body).to include(privacy_policy_path)
           expect(response.body.index('action="/users/sign_in"'))
             .to be < response.body.index('action="/users/auth/google_oauth2"')
           expect(response.body).to include('name="user[email]"')
@@ -131,6 +136,50 @@ RSpec.describe 'Users::sessions' do
 
         post user_session_path, params: { user: { email: seed_admin.email, password: seed_admin_password } }
         expect(response).to redirect_to(dashboard_path)
+      end
+    end
+
+    it 'LINEが有効な場合はPOSTのLINEログインボタンを表示する' do
+      with_oauth_routes(providers: [:line]) do
+        get new_user_session_path
+        line_form = parsed_response.at_css(
+          'form[action="/users/auth/line"][method="post"][data-turbo="false"]'
+        )
+
+        aggregate_failures do
+          expect(response.body).to include('LINEでログイン')
+          expect(line_form).to be_present
+          expect(line_form.at_css('button[disabled]')).to be_present
+          expect(response.body).to include('外部アカウントでのログインでは、連携先に登録されているメールアドレスを取得し')
+          expect(response.body).to include('利用規約とプライバシーポリシーに同意')
+          expect(response.body).not_to include('href="/users/auth/line"')
+          expect(response.body).not_to include('Googleでログイン')
+          expect(response.body).not_to include('Developer')
+        end
+      end
+    end
+
+    it 'GoogleとLINEが有効な場合はGoogleからLINEの順でPOSTボタンを表示する' do
+      with_oauth_routes(providers: %i[google_oauth2 line]) do
+        get new_user_session_path
+        google_form = parsed_response.at_css(
+          'form[action="/users/auth/google_oauth2"][method="post"][data-turbo="false"]'
+        )
+        line_form = parsed_response.at_css(
+          'form[action="/users/auth/line"][method="post"][data-turbo="false"]'
+        )
+
+        aggregate_failures do
+          expect(google_form).to be_present
+          expect(line_form).to be_present
+          expect(google_form.at_css('button[disabled]')).to be_present
+          expect(line_form.at_css('button[disabled]')).to be_present
+          expect(response.body.index('action="/users/auth/google_oauth2"'))
+            .to be < response.body.index('action="/users/auth/line"')
+          expect(response.body).not_to include('href="/users/auth/google_oauth2"')
+          expect(response.body).not_to include('href="/users/auth/line"')
+          expect(response.body).not_to include('/users/auth/developer')
+        end
       end
     end
   end

@@ -141,6 +141,14 @@ ja:
         google:
           sign_in: Googleでログイン
           sign_up: Googleで登録
+        line:
+          sign_in: LINEでログイン
+          sign_up: LINEで登録
+        consent:
+          description: 外部アカウントでのログインでは、連携先に登録されているメールアドレスを取得し、本人確認・アカウント管理・サポート対応に利用します。
+          terms: 利用規約
+          privacy: プライバシーポリシー
+          checkbox: 利用規約とプライバシーポリシーに同意して外部アカウントでログイン・登録する
         separator: または
       minimum_password_length: "（%{count}字以上）"
     unlocks:
