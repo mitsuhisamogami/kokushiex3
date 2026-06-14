@@ -18,6 +18,7 @@ RSpec.describe 'Users::registrations' do
         get new_user_registration_path
 
         expect(response.body).not_to include('Googleで登録')
+        expect(response.body).not_to include('LINEで登録')
       end
     end
 
@@ -32,9 +33,56 @@ RSpec.describe 'Users::registrations' do
           expect(response.body).to include('Googleで登録')
           expect(google_form).to be_present
           expect(google_form.at_css('svg')).to be_present
+          expect(google_form.at_css('button[disabled]')).to be_present
+          expect(response.body).to include('外部アカウントでのログインでは、連携先に登録されているメールアドレスを取得し')
+          expect(response.body).to include(terms_of_use_path)
+          expect(response.body).to include(privacy_policy_path)
           expect(response.body.index('action="/users"'))
             .to be < response.body.index('action="/users/auth/google_oauth2"')
           expect(response.body).not_to include('href="/users/auth/google_oauth2"')
+        end
+      end
+    end
+
+    it 'LINEが有効な場合はPOSTのLINE登録ボタンを表示する' do
+      with_oauth_routes(providers: [:line]) do
+        get new_user_registration_path
+        line_form = parsed_response.at_css(
+          'form[action="/users/auth/line"][method="post"][data-turbo="false"]'
+        )
+
+        aggregate_failures do
+          expect(response.body).to include('LINEで登録')
+          expect(line_form).to be_present
+          expect(line_form.at_css('button[disabled]')).to be_present
+          expect(response.body).to include('外部アカウントでのログインでは、連携先に登録されているメールアドレスを取得し')
+          expect(response.body).to include('利用規約とプライバシーポリシーに同意')
+          expect(response.body).not_to include('href="/users/auth/line"')
+          expect(response.body).not_to include('Googleで登録')
+          expect(response.body).not_to include('/users/auth/developer')
+        end
+      end
+    end
+
+    it 'GoogleとLINEが有効な場合はGoogleからLINEの順でPOST登録ボタンを表示する' do
+      with_oauth_routes(providers: %i[google_oauth2 line]) do
+        get new_user_registration_path
+        google_form = parsed_response.at_css(
+          'form[action="/users/auth/google_oauth2"][method="post"][data-turbo="false"]'
+        )
+        line_form = parsed_response.at_css(
+          'form[action="/users/auth/line"][method="post"][data-turbo="false"]'
+        )
+
+        aggregate_failures do
+          expect(google_form).to be_present
+          expect(line_form).to be_present
+          expect(google_form.at_css('button[disabled]')).to be_present
+          expect(line_form.at_css('button[disabled]')).to be_present
+          expect(response.body.index('action="/users/auth/google_oauth2"'))
+            .to be < response.body.index('action="/users/auth/line"')
+          expect(response.body).not_to include('href="/users/auth/google_oauth2"')
+          expect(response.body).not_to include('href="/users/auth/line"')
         end
       end
     end

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
-  %i[developer google_oauth2].each do |provider|
+  %i[developer google_oauth2 line].each do |provider|
     define_method(provider) do
       handle_callback
     end

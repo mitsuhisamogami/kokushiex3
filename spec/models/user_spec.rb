@@ -43,6 +43,18 @@ RSpec.describe User do
       expect(described_class.omniauth_providers).to contain_exactly(:developer, :google_oauth2)
     end
 
+    it 'LINEが有効な場合はlineを含める' do
+      allow(Oauth::ProviderConfig).to receive(:enabled_providers).and_return([:line])
+
+      expect(described_class.omniauth_providers).to contain_exactly(:developer, :line)
+    end
+
+    it 'GoogleとLINEが有効な場合はProviderConfigの順序を維持する' do
+      allow(Oauth::ProviderConfig).to receive(:enabled_providers).and_return(%i[google_oauth2 line])
+
+      expect(described_class.omniauth_providers).to eq %i[developer google_oauth2 line]
+    end
+
     it 'Googleが無効な場合はgoogle_oauth2を含めない' do
       allow(Oauth::ProviderConfig).to receive(:enabled_providers).and_return([])
 
@@ -71,6 +83,28 @@ RSpec.describe User do
           load devise_initializer
 
           expect(Devise.omniauth_configs.keys).not_to include(:google_oauth2)
+        end
+      end
+    end
+
+    it 'LINEが有効な場合はDeviseにもlineを登録する' do
+      with_restored_devise_omniauth_configs do
+        with_line_oauth_credentials do
+          Devise.omniauth_configs.clear
+          load devise_initializer
+
+          expect(Devise.omniauth_configs.keys).to include(:line)
+        end
+      end
+    end
+
+    it 'LINEが無効な場合はDeviseにlineを登録しない' do
+      with_restored_devise_omniauth_configs do
+        with_line_oauth_credentials(client_id: nil, client_secret: nil) do
+          Devise.omniauth_configs.clear
+          load devise_initializer
+
+          expect(Devise.omniauth_configs.keys).not_to include(:line)
         end
       end
     end

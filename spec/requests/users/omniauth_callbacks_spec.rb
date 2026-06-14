@@ -5,6 +5,7 @@ RSpec.describe 'Users::omniauth_callbacks' do
     original_test_mode = OmniAuth.config.test_mode
     original_developer_auth = OmniAuth.config.mock_auth[:developer]
     original_google_auth = OmniAuth.config.mock_auth[:google_oauth2]
+    original_line_auth = OmniAuth.config.mock_auth[:line]
 
     OmniAuth.config.test_mode = true
     OmniAuth.config.mock_auth[:developer] = auth
@@ -13,6 +14,7 @@ RSpec.describe 'Users::omniauth_callbacks' do
   ensure
     OmniAuth.config.mock_auth[:developer] = original_developer_auth
     OmniAuth.config.mock_auth[:google_oauth2] = original_google_auth
+    OmniAuth.config.mock_auth[:line] = original_line_auth
     OmniAuth.config.test_mode = original_test_mode
   end
 
@@ -352,6 +354,185 @@ RSpec.describe 'Users::omniauth_callbacks' do
         end.not_to(change { [User.count, UserIdentity.count] })
 
         expect(response).to redirect_to(new_user_session_path)
+        expect(flash[:alert]).to eq I18n.t('oauth.identity_authenticator.failure')
+      end
+    end
+  end
+
+  describe 'GET /users/auth/line/callback' do
+    around do |example|
+      with_oauth_routes(providers: [:line]) { example.run }
+    end
+
+    before do
+      OmniAuth.config.mock_auth[:line] = auth
+    end
+
+    def line_callback(params: {})
+      get user_line_omniauth_callback_path(params), env: { 'omniauth.auth' => auth }
+    end
+
+    let(:auth) do
+      mock_line_auth_hash(
+        uid: 'line-uid-123',
+        email: 'line-user@example.com',
+        name: 'LINE User',
+        image: 'https://example.com/line-avatar.png',
+        credentials: {
+          token: 'line-access-token',
+          refresh_token: 'line-refresh-token'
+        }
+      )
+    end
+
+    it 'verified emailで未登録ユーザーを作成してログインする' do
+      expect do
+        line_callback
+      end.to change(User, :count).by(1).and change(UserIdentity, :count).by(1)
+
+      identity = UserIdentity.find_by!(provider: 'line', uid: 'line-uid-123')
+      aggregate_failures do
+        expect(response).to redirect_to(root_path)
+        expect(controller.current_user).to eq identity.user
+        expect(identity.email).to eq 'line-user@example.com'
+        expect(identity.name).to eq 'LINE User'
+        expect(identity.image_url).to eq 'https://example.com/line-avatar.png'
+      end
+    end
+
+    it 'tokenやraw_infoをUserIdentityへ保存しない' do
+      line_callback
+
+      identity = UserIdentity.find_by!(provider: 'line', uid: 'line-uid-123')
+      aggregate_failures do
+        expect(identity.attributes).not_to include('token')
+        expect(identity.attributes).not_to include('refresh_token')
+        expect(identity.attributes).not_to include('raw_info')
+      end
+    end
+
+    context 'verified emailの既存ユーザーがいる場合' do
+      let!(:user) { create(:user, email: 'line-user@example.com') }
+
+      it '既存ユーザーに自動連携してログインする' do
+        user_count = User.count
+
+        expect do
+          line_callback
+        end.to change(user.user_identities, :count).by(1)
+
+        expect(User.count).to eq user_count
+        expect(response).to redirect_to(root_path)
+        expect(controller.current_user).to eq user
+      end
+    end
+
+    context '既存LINE identityがある場合' do
+      let!(:identity) { create(:user_identity, provider: 'line', uid: 'line-uid-123') }
+
+      it '紐づくユーザーでログインする' do
+        line_callback
+
+        expect(response).to redirect_to(root_path)
+        expect(controller.current_user).to eq identity.user
+      end
+    end
+
+    context 'emailはあるがverified claimがない場合' do
+      let(:auth) do
+        mock_line_auth_hash(
+          email: 'line-user@example.com',
+          raw_info: { email: 'line-user@example.com', name: 'LINE User' }
+        )
+      end
+
+      it '未ログインでは新規作成せずログイン画面へ戻す' do
+        expect do
+          line_callback
+        end.not_to(change { [User.count, UserIdentity.count] })
+
+        expect(response).to redirect_to(new_user_session_path)
+        expect(flash[:alert]).to eq I18n.t('oauth.identity_authenticator.unverified_email')
+      end
+    end
+
+    context 'verified claimがfalseの場合' do
+      let(:auth) do
+        mock_line_auth_hash(
+          email: 'line-user@example.com',
+          raw_info: { email: 'line-user@example.com', email_verified: false, verified_email: false }
+        )
+      end
+
+      it '未ログインでは新規作成せずログイン画面へ戻す' do
+        expect do
+          line_callback
+        end.not_to(change { [User.count, UserIdentity.count] })
+
+        expect(response).to redirect_to(new_user_session_path)
+        expect(flash[:alert]).to eq I18n.t('oauth.identity_authenticator.unverified_email')
+      end
+    end
+
+    context 'emailがない場合' do
+      let(:auth) do
+        mock_line_auth_hash(email: nil, raw_info: { name: 'LINE User', email_verified: true })
+      end
+
+      it '未ログインでは新規作成せずログイン画面へ戻す' do
+        expect do
+          line_callback
+        end.not_to(change { [User.count, UserIdentity.count] })
+
+        expect(response).to redirect_to(new_user_session_path)
+        expect(flash[:alert]).to eq I18n.t('oauth.identity_authenticator.unverified_email')
+      end
+    end
+
+    context 'ログイン中の場合' do
+      let(:user) { create(:user) }
+      let(:auth) do
+        mock_line_auth_hash(email: nil, raw_info: { name: 'LINE User' })
+      end
+
+      before { sign_in user }
+
+      it 'emailなしでもログイン中ユーザー本人へ連携する' do
+        expect do
+          line_callback
+        end.to change(user.user_identities, :count).by(1)
+
+        identity = user.user_identities.find_by!(provider: 'line', uid: 'line-uid-123')
+        expect(response).to redirect_to(root_path)
+        expect(identity.email).to be_nil
+      end
+    end
+
+    context 'ゲストユーザーでログイン中の場合' do
+      let(:guest_user) { create(:user, :guest) }
+
+      before { sign_in guest_user }
+
+      it '連携せずアカウント画面へ戻す' do
+        expect do
+          line_callback
+        end.not_to change(guest_user.user_identities, :count)
+
+        expect(response).to redirect_to(account_path)
+        expect(flash[:alert]).to eq I18n.t('oauth.identity_authenticator.guest_user_not_allowed')
+      end
+    end
+
+    context 'callback providerとauth.providerが一致しない場合' do
+      let(:auth) { auth_hash(provider: 'google_oauth2', uid: 'google-uid-123') }
+
+      it 'identityを作成せず失敗する' do
+        expect do
+          line_callback(params: { redirect_url: 'https://evil.example.com' })
+        end.not_to(change { [User.count, UserIdentity.count] })
+
+        expect(response).to redirect_to(new_user_session_path)
+        expect(response).not_to redirect_to('https://evil.example.com')
         expect(flash[:alert]).to eq I18n.t('oauth.identity_authenticator.failure')
       end
     end

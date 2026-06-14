@@ -111,7 +111,47 @@ credentials が空の場合のみ環境変数へ fallback します。client id 
 
 credentials または環境変数を変更した場合は Rails を再起動してください。
 
+## LINE Login
+
+LINE ログインは `omniauth-line-v2` で OmniAuth provider `line` として扱います。ローカルまたは本番で有効にするには、LINE Developers Console で LINE Login channel を作成します。
+
+1. LINE Developers Console で LINE Login channel を作成する
+2. App types で Web app を有効にする
+3. Callback URL を登録する
+   - `http://localhost:3000/users/auth/line/callback`
+   - `https://app.kokushiex.com/users/auth/line/callback`
+4. scope は `profile openid email` を使用する
+5. email を取得する場合は Email address permission を申請・承認する
+
+Rails credentials には以下の key で設定します。実値はコミットしないでください。
+
+```yaml
+line_oauth:
+  client_id:
+  client_secret:
+```
+
+環境変数で設定する場合は、以下を使います。
+
+```bash
+LINE_CLIENT_ID=
+LINE_CLIENT_SECRET=
+```
+
+credentials が空の場合のみ環境変数へ fallback します。client id と client secret の両方が設定されている場合だけ LINE ログインが有効になります。
+
+LINE channel が Developing の場合は利用者が制限されます。本番公開前に Published 状態と callback URL を確認してください。Email address permission が未承認の場合、LINE から email が返らないため、未ログインでの新規登録と既存 email アカウントへの自動連携は失敗します。`omniauth-line-v2` は LINE の `/oauth2/v2.1/verify` で検証済みの ID token response を `extra.id_info` として返します。このアプリでは取得 email と `extra.id_info.email` が一致する場合に LINE email を利用します。ログイン済みユーザーの本人アカウントへの LINE 連携は既存 OAuth 共通基盤の仕様どおり扱います。
+
+アプリ DB には LINE の access token、refresh token、raw_info は保存しません。
+
 ローカルでの確認手順:
+
+`.env` または Rails credentials に LINE credentials を設定してから起動します。`.env` を使う場合は以下のように設定し、実値をコミットしないでください。
+
+```bash
+LINE_CLIENT_ID=
+LINE_CLIENT_SECRET=
+```
 
 ```bash
 docker-compose up -d
@@ -119,7 +159,9 @@ docker-compose exec web rails db:prepare:development
 docker-compose exec web bin/dev
 ```
 
-`http://localhost:3000/users/sign_in` を開き、`admin@example.com` / `admin123` で通常ログインできることを確認します。Google credentials 未設定時は Google ボタンが表示されず、設定後に Rails を再起動すると `Googleでログイン` が表示されます。
+Rails credentials に設定済みの場合も、通常どおり `docker-compose up -d` で起動できます。
+
+`http://localhost:3000/users/sign_in` を開き、`admin@example.com` / `admin123` で通常ログインできることを確認します。Google credentials 未設定時は Google ボタンが表示されず、設定後に Rails を再起動すると `Googleでログイン` が表示されます。LINE credentials 未設定時は LINE ボタンが表示されず、設定後に Rails を再起動すると `LINEでログイン` が表示されます。
 
 ## テスト
 

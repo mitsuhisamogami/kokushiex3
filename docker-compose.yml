@@ -11,6 +11,11 @@ services:
       - 3000:3000
     depends_on:
       - db
+    environment:
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      LINE_CLIENT_ID: ${LINE_CLIENT_ID:-}
+      LINE_CLIENT_SECRET: ${LINE_CLIENT_SECRET:-}
     # railsでpryする用
     # true を指定することでコンテナを起動させ続ける。   
     tty: true
