@@ -3,12 +3,11 @@
         <div class='mb-10 mt-5'>
             <% if @latest_examination.present? %>
                 <%= render 'latest_score', examination: @latest_examination %>
-                <%= render 'examination_history', examinations: @examinations %>
-                <% if @total_history_pages > 1 %>
-                    <%= render 'pagination',
-                               current_page: @history_page,
-                               total_pages: @total_history_pages %>
-                <% end %>
+                <%= render 'examination_history',
+                           examinations: @examinations,
+                           score_trend_data: @score_trend_data,
+                           current_page: @history_page,
+                           total_pages: @total_history_pages %>
             <% else %>
                 <%= render 'empty_state' %>
             <% end %>

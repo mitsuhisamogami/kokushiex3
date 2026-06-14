@@ -70,6 +70,21 @@ RSpec.describe 'Dashboards' do
           expect(rows[1]).to have_text('第58回(2023年度)')
           expect(rows[1]).to have_link('確認する', href: examination_path(old_examination))
         end
+
+        it '受験履歴カードに得点率推移グラフのタブを表示する' do
+          get '/dashboard'
+
+          html = Capybara.string(response.body)
+          history = html.find("[data-testid='examination-history']")
+
+          expect(history).to have_button('履歴')
+          expect(history).to have_button('得点率推移')
+          expect(history).to have_css("[data-controller='score-trend-chart']")
+          expect(response.body).to include('&quot;percentage&quot;:70.0')
+          expect(response.body).to include('&quot;percentage&quot;:75.0')
+          expect(response.body).to include('&quot;pass_percentage&quot;:75.0')
+          expect(response.body).to include('&quot;pass_percentage&quot;:80.0')
+        end
       end
 
       context '受験履歴がない場合' do

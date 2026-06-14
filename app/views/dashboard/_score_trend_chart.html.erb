@@ -1,0 +1,10 @@
+<div class='mt-4'
+     data-controller='score-trend-chart'
+     data-score-trend-chart-scores-value='<%= json_escape(score_trend_data.to_json) %>'>
+    <div class='h-80'>
+        <canvas data-score-trend-chart-target='canvas'></canvas>
+        <p class='hidden py-10 text-center text-gray-500' data-score-trend-chart-target='empty'>
+            得点率の推移を表示できる受験履歴がありません。
+        </p>
+    </div>
+</div>
