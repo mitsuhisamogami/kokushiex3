@@ -21,6 +21,17 @@ RSpec.describe 'Examinations' do
         get examination_path(examination)
         expect(response).to have_http_status(:ok)
       end
+
+      it '分野別正答率を表示する' do
+        create(:question_tag, question:, tag: create(:tag, name: '運動療法'))
+
+        get examination_path(examination)
+
+        expect(response.body).to include('分野別正答率')
+        expect(response.body).to include('tag-score-chart')
+        expect(response.body).not_to include('chart1.png')
+        expect(response.body).not_to include('chart3.png')
+      end
     end
 
     context '他人のexaminationにアクセスしようとする場合' do

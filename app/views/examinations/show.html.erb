@@ -93,17 +93,16 @@
                 </div>
             </div>
             <!-- 正答率 -->
-            <!--
-            <div data-results-display-target="errorRatio" class='hidden w-full h-full border-2 border-gray-200 border-opacity-60 rounded-lg overflow-hidden shadow-xl'>
+            <div data-results-display-target="errorRatio" class='mt-8 w-full h-full border-2 border-gray-200 border-opacity-60 rounded-lg overflow-hidden shadow-xl'>
                 <div class='flex'>
                     <div class='w-full h-full border-2 border-gray-200 border-opacity-60 rounded-lg overflow-hidden shadow-xl'>
                         <div class='m-5'>
-                            <%= render 'result_chart' %>
+                            <h2 class='font-bold text-xl'>分野別正答率</h2>
+                            <%= render 'result_chart', tag_score_summary: @tag_score_summary %>
                         </div>
                     </div>
                 </div>
             </div>
-            -->
         </div>
     </div>
 </div>
