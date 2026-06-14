@@ -1,26 +1,26 @@
-<table class="table-auto w-full text-center border-collapse">
+<table class="table-fixed w-full text-center border-collapse text-[11px]">
   <thead>
     <tr>
-      <th class="border-b-2 border-gray-300 px-2 py-1 w-20 whitespace-nowrap">問題番号</th>
-      <th class="border-b-2 border-gray-300 px-2 py-1 w-20 whitespace-nowrap">回答</th>
-      <th class="border-b-2 border-gray-300 px-2 py-1 w-20 whitespace-nowrap">正答</th>
+      <th class="border-b-2 border-blue-100 bg-blue-50 px-1 py-2 whitespace-nowrap text-gray-600">問題</th>
+      <th class="border-b-2 border-blue-100 bg-blue-50 px-1 py-2 whitespace-nowrap text-gray-600">回答</th>
+      <th class="border-b-2 border-blue-100 bg-blue-50 px-1 py-2 whitespace-nowrap text-gray-600">正答</th>
     </tr>
   </thead>
   <tbody>
     <% questions.each do |question| %>
       <tr>
         <!-- 問題番号 -->
-        <td class="border border-gray-300 px-2 py-1 w-20 <%= question.decorate.result_color(examination) %>">
+        <td class="border border-gray-200 px-1 py-1.5 <%= question.decorate.result_color(examination) %>">
           <%= test.decorate.question_code_without_turn(question) %>
         </td>
 
         <!-- 回答 -->
-        <td class="border border-gray-300 px-2 py-1 bg-sky-100 w-20">
+        <td class="border border-gray-200 px-1 py-1.5 bg-blue-50">
           <%= question.selected_option_numbers(examination).join(', ') %>
         </td>
 
         <!-- 正答 -->
-        <td class="border border-gray-300 px-2 py-1 bg-green-100 w-20">
+        <td class="border border-gray-200 px-1 py-1.5 bg-emerald-50">
           <%= question.correct_option_numbers.join(', ') %>
         </td>
       </tr>

@@ -1,14 +1,24 @@
-<div class='mt-4 justify-center'>
-    <div>
-        <h3 class='font-bold text-xl text-gray-500'>共通</h3>
-        <%= image_tag 'chart1.png', size: 600 %>
+<div class='mt-4' data-controller='tag-score-chart'
+     data-tag-score-chart-summary-value='<%= json_escape(tag_score_summary.to_json) %>'>
+    <div class='flex flex-wrap gap-2 border-b border-gray-200'>
+        <% tag_score_summary.each do |section_key, section| %>
+            <button type='button' class='border-b-2 px-4 py-2 text-sm font-bold'
+                    data-tag-score-chart-target='tab' data-section-key='<%= section_key %>'
+                    data-action='tag-score-chart#select'>
+                <%= section[:label] %>
+            </button>
+        <% end %>
     </div>
-    <div>
-        <h3 class='font-bold text-xl text-gray-500'>専門</h3>
-        <%= image_tag 'chart3.png', size: 600 %>
+
+    <div class='mt-4 rounded border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-gray-700'>
+        <p data-tag-score-chart-target='note'></p>
+        <p>複数の分野にまたがる問題は、それぞれの分野に加算されます。</p>
     </div>
-    <div>
-        <h3 class='font-bold text-xl text-gray-500'>実地</h3>
-        <%= image_tag 'chart3.png', size: 600 %>
+
+    <div class='mt-6 h-96 md:h-[30rem]'>
+        <canvas data-tag-score-chart-target='canvas'></canvas>
+        <p class='hidden py-10 text-center text-gray-500' data-tag-score-chart-target='empty'>
+            表示できるタグ別集計がありません。
+        </p>
     </div>
 </div>
