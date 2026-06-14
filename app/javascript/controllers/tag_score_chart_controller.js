@@ -53,6 +53,8 @@ export default class extends Controller {
             backgroundColor: "#2563eb",
             borderColor: "#1e40af",
             borderWidth: 1,
+            barPercentage: 0.8,
+            categoryPercentage: 0.82,
             customScores: tags,
           },
         ],
@@ -61,12 +63,35 @@ export default class extends Controller {
         indexAxis: "y",
         responsive: true,
         maintainAspectRatio: false,
+        layout: {
+          padding: {
+            right: 96,
+          },
+        },
         scales: {
           x: {
             beginAtZero: true,
             max: 100,
+            grid: {
+              color: "rgba(148, 163, 184, 0.25)",
+            },
             ticks: {
+              color: "#475569",
+              font: {
+                size: 13,
+              },
               callback: (value) => `${value}%`,
+            },
+          },
+          y: {
+            grid: {
+              color: "rgba(148, 163, 184, 0.18)",
+            },
+            ticks: {
+              color: "#475569",
+              font: {
+                size: 13,
+              },
             },
           },
         },
@@ -110,7 +135,7 @@ export default class extends Controller {
 
         ctx.save()
         ctx.fillStyle = "#374151"
-        ctx.font = "12px sans-serif"
+        ctx.font = "13px sans-serif"
         ctx.textBaseline = "middle"
 
         meta.data.forEach((bar, index) => {

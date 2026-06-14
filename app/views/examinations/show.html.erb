@@ -1,104 +1,104 @@
 <div class='flex flex-wrap body-font'>
-    <div class='w-full max-w-4xl m-auto'>
-        <!-- レポートセクション -->
-        <div class='flex mb-10'>
-            <div class='w-full h-full border-2 border-gray-200 border-opacity-60 rounded-lg overflow-hidden shadow-xl'>
-                <div class='m-5'>
-                    <div class='flex items-center'>
-                        <h2 class='font-bold text-xl'>レポート</h2>
-                        <h3 class='text-base'>(受験日：<%= @examination.attempt_date.strftime('%Y年%m月%d日') %>)</h3>
-                    </div>
-                    <div class='flex justify-center items-baseline'>
-                        <div class='my-2 text-4xl text-sky-500'>
-                            <%= @examination.test.decorate.implementation_year %>
+    <div class='w-full max-w-5xl m-auto px-4'>
+        <div data-controller="results-display" class='mb-10 mt-5'>
+            <div class='mb-4 flex gap-2 border-b border-gray-200'>
+                <button type='button' class='border-b-2 px-4 py-2 text-sm font-bold'
+                        data-results-display-target='tab' data-panel='report'
+                        data-action='results-display#switch'>
+                    レポート
+                </button>
+                <button type='button' class='border-b-2 px-4 py-2 text-sm font-bold'
+                        data-results-display-target='tab' data-panel='errata'
+                        data-action='results-display#switch'>
+                    正誤表
+                </button>
+            </div>
+
+            <div data-results-display-target='report'>
+                <!-- レポートセクション -->
+                <div class='flex mb-8'>
+                    <div class='w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg'>
+                        <div class='m-5'>
+                            <div class='flex flex-wrap items-center gap-x-3 gap-y-1'>
+                                <h2 class='font-bold text-lg'>レポート</h2>
+                                <h3 class='text-sm text-gray-500'>
+                                    受験日：<%= @examination.attempt_date.strftime('%Y年%m月%d日') %>
+                                </h3>
+                            </div>
+                            <div class='flex justify-center items-baseline'>
+                                <div class='my-3 text-2xl font-bold text-blue-700'>
+                                    <%= @examination.test.decorate.implementation_year %>
+                                </div>
+                                <p class='text-sm text-gray-500 ml-2'><%= @examination.test.pass_mark.total_score %>点満点</p>
+                            </div>
+
+                            <!-- テーブル表示 -->
+                            <table class="table-auto w-full text-center border-collapse text-sm">
+                                <thead>
+                                <tr>
+                                    <th class="border border-blue-100 bg-blue-50 px-4 py-3 text-gray-600"></th>
+                                    <th class="border border-blue-100 bg-blue-50 px-4 py-3 text-gray-600">共通</th>
+                                    <th class="border border-blue-100 bg-blue-50 px-4 py-3 text-gray-600">実地</th>
+                                    <th class="border border-blue-100 bg-blue-50 px-4 py-3 text-gray-600">総得点</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <!-- ユーザーの得点 -->
+                                <tr>
+                                    <td class="border border-gray-200 px-4 py-3 font-bold text-gray-600">
+                                        <%= @examination.user.username %>の得点
+                                    </td>
+                                    <td class="border border-gray-200 px-4 py-3 text-xl font-bold text-blue-700">
+                                        <%= @score.common_score %>
+                                    </td>
+                                    <td class="border border-gray-200 px-4 py-3 text-xl font-bold text-blue-700">
+                                        <%= @score.practical_score %>
+                                    </td>
+                                    <td class="border border-gray-200 px-4 py-3 text-xl font-bold text-blue-700">
+                                        <%= @score.total_score %>
+                                    </td>
+                                </tr>
+
+                                <!-- 合格基準 -->
+                                <tr>
+                                    <td class="border border-gray-200 px-4 py-3 font-bold text-gray-600">合格基準</td>
+                                    <td class="border border-gray-200 px-4 py-3 text-lg font-bold text-emerald-600"><%# 共通の合格点は設定されていない %></td>
+                                    <td class="border border-gray-200 px-4 py-3 text-lg font-bold text-emerald-600">
+                                        <%= @examination.test.pass_mark.required_practical_score %>
+                                    </td>
+                                    <td class="border border-gray-200 px-4 py-3 text-lg font-bold text-emerald-600">
+                                        <%= @examination.test.pass_mark.required_score %>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
                         </div>
-                        <p class='text-base ml-2'><%= @examination.test.pass_mark.total_score %>点満点</p>
                     </div>
+                </div>
 
-                    <!-- テーブル表示 -->
-                    <table class="table-auto w-full text-center border-collapse">
-                        <thead>
-                        <tr>
-                            <th class="border border-b-4 border-gray-300 px-4 py-2"></th>
-                            <th class="border border-b-4 border-gray-300 px-4 py-2 text-3xl text-gray-500">共通</th>
-                            <th class="border border-b-4 border-gray-300 px-4 py-2 text-3xl text-gray-500">実地</th>
-                            <th class="border border-b-4 border-gray-300 px-4 py-2 text-3xl text-gray-500">総得点</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <!-- ユーザーの得点 -->
-                        <tr>
-                            <td class="border border-gray-300 px-4 py-2 text-3xl text-gray-500">
-                                <%= @examination.user.username %>の得点
-                            </td>
-                            <td class="border border-gray-300 px-4 py-2 text-3xl text-sky-500"><%= @score.common_score %></td>
-                            <td class="border border-gray-300 px-4 py-2 text-3xl text-sky-500">
-                                <%= @score.practical_score %>
-                            </td>
-                            <td class="border border-gray-300 px-4 py-2 text-3xl text-sky-500"><%= @score.total_score %></td>
-                        </tr>
-
-                        <!-- 合格基準 -->
-                        <tr>
-                            <td class="border border-gray-300 px-4 py-2 text-3xl text-gray-500">合格基準</td>
-                            <td class="border border-gray-300 px-4 py-2 text-3xl text-green-500"><%# 共通の合格点は設定されていない %></td>
-                            <td class="border border-gray-300 px-4 py-2 text-3xl text-green-500">
-                                <%= @examination.test.pass_mark.required_practical_score %>
-                            </td>
-                            <td class="border border-gray-300 px-4 py-2 text-3xl text-green-500">
-                                <%= @examination.test.pass_mark.required_score %>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
+                <!-- 正答率 -->
+                <div class='w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg'>
+                    <div class='m-5'>
+                        <h2 class='font-bold text-lg'>分野別正答率</h2>
+                        <%= render 'result_chart', tag_score_summary: @tag_score_summary %>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <!-- 回答確認セクション -->
-        <div data-controller="results-display" class='mb-10 mt-5'>
-            <!--
-            <div class="flex">
-                <button data-action="results-display#switchingDisplayTypes" class='bg-sky-100 text-black font-bold py-2 px-4 rounded'>
-                正誤表
-                </button>
-
-                <button data-action="results-display#switchingDisplayTypes" class='bg-purple-300 text-black font-bold py-2 px-4 rounded'>
-                正答率
-                </button>
-
-            </div>
-            -->
 
             <!-- 正誤表 -->
-            <div data-results-display-target="errata" class='w-full h-full border-2 border-gray-200 border-opacity-60 rounded-lg overflow-hidden shadow-xl'>
-                <div class='flex'>
-                    <div class='w-full h-full border-2 border-gray-200 border-opacity-60 rounded-lg overflow-hidden shadow-xl'>
-                        <div class='m-5'>
-                            <h2 class='font-bold text-xl'>正誤表</h2>
-                            <div class='flex flex-wrap justify-around gap-20 mt-4'>
-                                <!-- テーブル表示 -->
-                                <div class="grid grid-cols-4 gap-2">
-                                    <% 4.times do |col| %>
-                                        <%= render partial: 'question_table',
-                                                   locals: {
-                                                     questions: @questions.slice(col * 50, 50) || [],
-                                                     examination: @examination, test: @test
-                                                   } %>
-                                    <% end %>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- 正答率 -->
-            <div data-results-display-target="errorRatio" class='mt-8 w-full h-full border-2 border-gray-200 border-opacity-60 rounded-lg overflow-hidden shadow-xl'>
-                <div class='flex'>
-                    <div class='w-full h-full border-2 border-gray-200 border-opacity-60 rounded-lg overflow-hidden shadow-xl'>
-                        <div class='m-5'>
-                            <h2 class='font-bold text-xl'>分野別正答率</h2>
-                            <%= render 'result_chart', tag_score_summary: @tag_score_summary %>
+            <div data-results-display-target="errata" class='hidden w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg'>
+                <div class='m-5'>
+                    <h2 class='font-bold text-lg'>正誤表</h2>
+                    <div class='mt-4'>
+                        <!-- テーブル表示 -->
+                        <div class="grid grid-cols-4 gap-2">
+                            <% 4.times do |col| %>
+                                <%= render partial: 'question_table',
+                                           locals: {
+                                             questions: @questions.slice(col * 50, 50) || [],
+                                             examination: @examination, test: @test
+                                           } %>
+                            <% end %>
                         </div>
                     </div>
                 </div>

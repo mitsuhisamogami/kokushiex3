@@ -32,6 +32,15 @@ RSpec.describe 'Examinations' do
         expect(response.body).not_to include('chart1.png')
         expect(response.body).not_to include('chart3.png')
       end
+
+      it 'レポートを初期表示し正誤表をタブで切り替える' do
+        get examination_path(examination)
+
+        expect(response.body).to include('data-controller="results-display"')
+        expect(response.body).to include("data-panel='report'")
+        expect(response.body).to include("data-panel='errata'")
+        expect(response.body).to include('data-results-display-target="errata" class=\'hidden')
+      end
     end
 
     context '他人のexaminationにアクセスしようとする場合' do
