@@ -31,11 +31,13 @@ export default class extends Controller {
   activateButton(button) {
     button.classList.add('bg-blue-950', 'text-white', 'border-blue-950');
     button.classList.remove('bg-slate-100', 'text-slate-700', 'border-slate-200');
+    button.setAttribute('aria-selected', 'true');
   }
 
   deactivateButton(button) {
     button.classList.add('bg-slate-100', 'text-slate-700', 'border-slate-200');
     button.classList.remove('bg-blue-950', 'text-white', 'border-blue-950');
+    button.setAttribute('aria-selected', 'false');
   }
 
   syncActiveButton() {
