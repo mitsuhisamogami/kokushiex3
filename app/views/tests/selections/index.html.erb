@@ -1,89 +1,162 @@
-<div class='flex flex-wrap body-font'>
-  <div class='w-full max-w-4xl m-auto'>
-    <div data-controller="tab" class='mb-10 mt-5'>
-      <div class="flex">
-        <button data-action="tab#showYearTypes" class='bg-sky-100 text-black font-bold py-2 px-4 rounded'>
+<% _base_tag_class =
+     [
+       'inline-flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2',
+       'text-center font-bold text-slate-800 shadow-sm transition',
+       'hover:border-blue-200 hover:bg-blue-50'
+     ].join(' ')
+   _checkbox_class = 'rounded-sm text-blue-950 focus:ring-blue-950' %>
+
+<div class='flex flex-wrap body-font px-4 py-6'>
+  <div class='w-full max-w-4xl mx-auto'>
+    <div data-controller="tab" class='mb-10'>
+      <div class="flex" role="tablist" aria-label="出題形式">
+        <button id="year-tab"
+                type="button"
+                role="tab"
+                aria-controls="year-panel"
+                aria-selected="true"
+                data-tab-target="yearButton"
+                data-action="tab#showYearTypes"
+                class='border border-blue-950 bg-blue-950 text-white font-bold py-2 px-5 rounded-t-md transition'>
           模試形式
         </button>
-        <button data-action="tab#showTagTypes" class='bg-purple-300 text-black font-bold py-2 px-4 rounded'>
+        <button id="tag-tab"
+                type="button"
+                role="tab"
+                aria-controls="tag-panel"
+                aria-selected="false"
+                data-tab-target="tagButton"
+                data-action="tab#showTagTypes"
+                class='border border-slate-200 bg-slate-100 text-slate-700 font-bold py-2 px-5 rounded-t-md transition hover:bg-slate-200'>
           小テスト形式
         </button>
       </div>
 
       <!-- 年度選択 -->
-      <div data-tab-target="year" class='w-full h-full border-2 border-gray-200 border-opacity-60 rounded-lg overflow-hidden shadow-xl'>
-        <div class='m-5'>
-          <div class='mt-3 flex items-center'>
-            <%= image_tag 'calendar.png', size: 50 %>
-            <h2 class='font-bold text-xl text-gray-900 ml-3'>年度から選択</h2>
+      <div id="year-panel"
+           role="tabpanel"
+           aria-labelledby="year-tab"
+           data-tab-target="year"
+           class='w-full h-full rounded-lg rounded-tl-none border border-slate-200 bg-white overflow-hidden shadow-lg shadow-slate-200/60'>
+        <div class='p-6'>
+          <div class='flex items-center gap-4'>
+            <div class='grid h-12 w-12 place-items-center rounded-lg bg-blue-50'>
+              <%= image_tag 'calendar.png', class: 'h-10 w-10' %>
+            </div>
+            <h2 class='font-bold text-xl text-slate-950'>年度から選択</h2>
           </div>
 
-          <div class='mt-3 grid grid-cols-4 gap-3'>
+          <div class='mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'>
             <% @tests.each do |test| %>
               <%= button_to "第#{test.turn}回（#{test.year}年度）", test_path(test.id),
-                            class: 'bg-sky-100 text-gray-800 hover:bg-sky-500 font-bold
-                            py-2 px-4 rounded-full shadow-xl text-center', method: :get %>
+                            class: 'w-full rounded-md border border-slate-200 bg-slate-50 px-4 py-2 text-center
+                            font-bold text-slate-800 shadow-sm transition hover:border-blue-200 hover:bg-blue-50
+                            hover:text-blue-950', method: :get %>
             <% end %>
           </div>
         </div>
       </div>
       <!-- タグ選択 -->
-      <div data-tab-target="tag" class='hidden w-full h-full border-2 border-gray-200 border-opacity-60 rounded-lg overflow-hidden shadow-xl'>
-        <div class='m-5'>
-          <div class='mt-3 flex items-center'>
-            <%= image_tag 'tag.png', size: 50 %>
-            <h2 class='font-bold text-xl text-gray-900 ml-3'>タグから選択</h2>
+      <div id="tag-panel"
+           role="tabpanel"
+           aria-labelledby="tag-tab"
+           data-tab-target="tag"
+           class='hidden w-full h-full rounded-lg rounded-tl-none border border-slate-200 bg-white overflow-hidden shadow-lg shadow-slate-200/60'>
+        <div class='p-6'>
+          <div class='flex items-center gap-4'>
+            <div class='grid h-12 w-12 place-items-center rounded-lg bg-blue-50'>
+              <%= image_tag 'tag.png', class: 'h-10 w-10' %>
+            </div>
+            <h2 class='font-bold text-xl text-slate-950'>タグから選択</h2>
           </div>
-          <div class='mt-3'>
+          <div class='mt-6'>
             <%= form_with url: mini_tests_path, method: :get do |f| %>
-              <h3 class='font-bold text-gray-900'>問題数を選択</h3>
-              <div class='flex flex-wrap justify-start'>
-                <div class='mr-4'>
-                  <%= radio_button_tag 'search[question_count]', 10, true, id: 'question_count_10' %>
-                  <%= label_tag 'question_count_10', '10問' %>
-                </div>
-                <div class='mr-4'>
-                  <%= radio_button_tag 'search[question_count]', 20, false, id: 'question_count_20' %>
-                  <%= label_tag 'question_count_20', '20問' %>
-                </div>
-                <div class='mr-4'>
-                  <%= radio_button_tag 'search[question_count]', 30, false, id: 'question_count_30' %>
-                  <%= label_tag 'question_count_30', '30問' %>
+              <div class='border-b border-slate-100 pb-4'>
+                <h3 class='font-bold text-slate-900'>問題数を選択</h3>
+                <div class='mt-2 flex flex-wrap justify-start gap-5'>
+                  <div class='inline-flex items-center gap-2 text-sm font-semibold text-slate-700'>
+                    <%= radio_button_tag 'search[question_count]',
+                                         10,
+                                         true,
+                                         id: 'question_count_10',
+                                         class: 'text-blue-950 focus:ring-blue-950' %>
+                    <%= label_tag 'question_count_10', '10問' %>
+                  </div>
+                  <div class='inline-flex items-center gap-2 text-sm font-semibold text-slate-700'>
+                    <%= radio_button_tag 'search[question_count]',
+                                         20,
+                                         false,
+                                         id: 'question_count_20',
+                                         class: 'text-blue-950 focus:ring-blue-950' %>
+                    <%= label_tag 'question_count_20', '20問' %>
+                  </div>
+                  <div class='inline-flex items-center gap-2 text-sm font-semibold text-slate-700'>
+                    <%= radio_button_tag 'search[question_count]',
+                                         30,
+                                         false,
+                                         id: 'question_count_30',
+                                         class: 'text-blue-950 focus:ring-blue-950' %>
+                    <%= label_tag 'question_count_30', '30問' %>
+                  </div>
                 </div>
               </div>
 
-              <h3 class='font-bold text-gray-900'>大分類から選択</h3>
-              <div class='flex flex-wrap justify-start'>
-                <% @major_categories.each do |tag| %>
-                  <div class='mt-3 mr-2 bg-amber-100 text-gray-800 font-bold py-2 px-4 shadow-xl text-center'>
-                    <%= check_box_tag 'search[tag_ids][]', tag.id, false, id: "tag_#{tag.id}" %>
-                    <%= label_tag "tag_#{tag.id}", tag.name %>
-                  </div>
-                <% end %>
+              <div class='border-b border-slate-100 py-4'>
+                <h3 class='font-bold text-slate-900'>大分類から選択</h3>
+                <div class='mt-3 flex flex-wrap justify-start gap-3'>
+                  <% @major_categories.each do |tag| %>
+                    <%= label_tag "tag_#{tag.id}",
+                                  class: "#{_base_tag_class} border-slate-200 bg-slate-50" do %>
+                      <%= check_box_tag 'search[tag_ids][]',
+                                        tag.id,
+                                        false,
+                                        id: "tag_#{tag.id}",
+                                        class: _checkbox_class %>
+                      <span><%= tag.name %></span>
+                    <% end %>
+                  <% end %>
+                </div>
               </div>
-              <h3 class='font-bold text-gray-900 mt-3'>共通問題から選択</h3>
-              <div class='flex flex-wrap justify-start'>
-                <% @common_tags.each do |tag| %>
-                  <div class='mt-3 mr-2 bg-green-100 text-gray-800 font-bold py-2 px-4 shadow-xl text-center'>
-                    <%= check_box_tag 'search[tag_ids][]', tag.id, false, id: "tag_#{tag.id}" %>
-                    <%= label_tag "tag_#{tag.id}", tag.name %>
-                  </div>
-                <% end %>
+
+              <div class='border-b border-slate-100 py-4'>
+                <h3 class='font-bold text-slate-900'>共通問題から選択</h3>
+                <div class='mt-3 flex flex-wrap justify-start gap-3'>
+                  <% @common_tags.each do |tag| %>
+                    <%= label_tag "tag_#{tag.id}",
+                                  class: "#{_base_tag_class} border-blue-100 bg-blue-50/40" do %>
+                      <%= check_box_tag 'search[tag_ids][]',
+                                        tag.id,
+                                        false,
+                                        id: "tag_#{tag.id}",
+                                        class: _checkbox_class %>
+                      <span><%= tag.name %></span>
+                    <% end %>
+                  <% end %>
+                </div>
               </div>
-              <h3 class='font-bold text-gray-900 mt-3'>専門問題から選択</h3>
-              <div class='flex flex-wrap justify-start'>
-                <% @special_tags.each do |tag| %>
-                  <div class='mt-3 mr-2 bg-blue-100 text-gray-800 font-bold py-2 px-4 shadow-xl text-center'>
-                    <%= check_box_tag 'search[tag_ids][]', tag.id, false, id: "tag_#{tag.id}" %>
-                    <%= label_tag "tag_#{tag.id}", tag.name %>
-                  </div>
-                <% end %>
+
+              <div class='py-4'>
+                <h3 class='font-bold text-slate-900'>専門問題から選択</h3>
+                <div class='mt-3 flex flex-wrap justify-start gap-3'>
+                  <% @special_tags.each do |tag| %>
+                    <%= label_tag "tag_#{tag.id}",
+                                  class: "#{_base_tag_class} border-slate-200 bg-slate-50" do %>
+                      <%= check_box_tag 'search[tag_ids][]',
+                                        tag.id,
+                                        false,
+                                        id: "tag_#{tag.id}",
+                                        class: _checkbox_class %>
+                      <span><%= tag.name %></span>
+                    <% end %>
+                  <% end %>
+                </div>
               </div>
-              <div class='mt-3 flex justify-center'>
-                <%= f.submit '小テストを始める', class: 'bg-orange-300 text-gray-100 hover:bg-sky-500
-                                                      hover:text-orange-300 font-bold py-2 px-4 rounded-lg' %>
-                <%= link_to '条件をクリア', tests_select_path, class: 'bg-gray-500 text-gray-100 hover:bg-gray-500
-                                                      hover:text-red-300 font-bold py-2 px-4 ml-2 rounded-lg' %>
+              <div class='mt-2 flex justify-center gap-3'>
+                <%= f.submit '小テストを始める', class: 'rounded-md bg-blue-950 px-5 py-2 font-bold text-white
+                                                      shadow-sm shadow-blue-800/20 transition hover:bg-blue-900' %>
+                <%= button_tag '条件をクリア', type: 'reset', class: 'rounded-md border border-slate-200 bg-slate-100
+                                                      px-5 py-2 font-bold text-slate-700 transition hover:bg-slate-200
+                                                      hover:text-slate-950' %>
               </div>
             <% end %>
           </div>
