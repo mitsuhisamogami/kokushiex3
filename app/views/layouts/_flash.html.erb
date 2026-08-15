@@ -1,6 +1,6 @@
 <% flash.each do |flash_type, message| %>
-    <div class="flex justify-between items-center p-4 text-center rounded-lg shadow-lg
-                <%= flash_type == 'notice' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600' %>">
+    <div class="flex justify-between items-center p-4 text-center shadow-md
+                <%= flash_type == 'notice' ? 'bg-sky-50 text-sky-700' : 'bg-red-50 text-red-700' %>">
         <div class="flex items-center justify-center w-full">
             <% if flash_type == 'notice' %>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
